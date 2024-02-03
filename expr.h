@@ -126,4 +126,17 @@ class BinaryExpr: public AbstractExpr {
   auto toString() const -> std::string;
 };
 
+// column expression(assosiated with a column with certain kind of tuple)
+class ColumnExpr: public AbstractExpr {
+ private:
+ /** column index of the tuple to extract from.*/
+  size_t column_idx_{0U};
+ public:
+  ColumnExpr() { expr_type_ = ExprType::Column; } 
+  ColumnExpr(size_t idx): column_idx_(idx) { expr_type_ = ExprType::Column; }
+
+  auto Evaluate(const Tuple *tuple) const -> DataBox { return tuple->getColumnData(column_idx_); }
+  auto toString() const -> std::string;
+};
+
 }
