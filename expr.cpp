@@ -22,6 +22,9 @@ auto UnaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
   }
   double res = 0.0;
   switch(optr_type_) {
+    case UnaryExprType::Minus:
+      res = -chd;
+      break;
     case UnaryExprType::Sqrt: 
       res = pow(chd, 0.5);
       break;
@@ -62,6 +65,9 @@ auto UnaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
 auto UnaryExpr::toString() const -> std::string {
   std::string res;
   switch(optr_type_) {
+    case UnaryExprType::Minus:
+      res += "~(";
+      break;
     case UnaryExprType::Sqrt: 
       res += "sqrt(";
       break;

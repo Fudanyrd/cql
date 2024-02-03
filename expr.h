@@ -67,6 +67,7 @@ class ConstExpr: public AbstractExpr {
 
 // type of unary expression(Only apply to float!)
 enum UnaryExprType {
+  Minus,               // ~x, get 0 - x.
   Sqrt,                // x^0.5
   Sqr,                 // x^2
   Ln,                  // ln(x)
@@ -139,4 +140,4 @@ class ColumnExpr: public AbstractExpr {
   auto toString() const -> std::string;
 };
 
-}
+}  // namespace cql;
