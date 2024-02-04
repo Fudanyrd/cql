@@ -1,3 +1,6 @@
+####################
+# variables to use #
+####################
 compile = g++ -std=c++11 -c -Wall
 expr = expr.h expr.cpp
 string_util = string_util.h string_util.cpp
@@ -5,8 +8,11 @@ schema = schema.h schema.cpp
 tuple = tuple.h tuple.cpp
 type = type.h type.cpp
 table = table.h table.cpp
+Partitioner = Partitioner.cpp Partitioner.h
 
-# object generating
+##########################
+# object file generating #
+##########################
 string_util.o: $(string_util)
 	$(compile) string_util.cpp
 schema.o: $(schema)
@@ -19,8 +25,12 @@ table.o: $(table)
 	$(compile) table.cpp
 expr.o: $(expr)
 	$(compile) expr.cpp
+Partitioner.o: $(Partitioner)
+	$(compile) Partitioner.cpp
 
-# unit test
+#############
+# unit test #
+#############
 stringUtilTest: string_util.o string_util_test.cpp
 	$(compile) string_util_test.cpp
 	g++ -o util string_util.o string_util_test.o
@@ -37,6 +47,12 @@ tableTest: schema.o string_util.o type.o tuple.o table.o table_test.cpp
 	$(compile) table_test.cpp
 	g++ -o table schema.o string_util.o type.o tuple.o table.o table_test.o
 
-# cleaning workspace
+partitionTest: string_util.o Partitioner.o
+	$(compile) partition_test.cpp
+	g++ -o partition partition_test.o string_util.o Partitioner.o
+
+######################
+# cleaning workspace #
+######################
 clean:
 	rm *.o

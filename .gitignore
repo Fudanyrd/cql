@@ -1,3 +1,6 @@
+# no reason to save binary files.
 *.o
 *.exe
+# csv and sql files are used for testing(ie. modified frequently)
 *.csv
+*.sql

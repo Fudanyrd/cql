@@ -18,4 +18,10 @@ namespace cql {
  */
 auto Split(const std::string &str, char ch) -> std::vector<std::string>;
 
+/**
+ * @brief Read a file into a string(including '\n'), this is
+ * useful when dealing with comments.
+ */
+auto readToStr(const std::string &filename) -> std::string;
+
 }  // namespace cql
