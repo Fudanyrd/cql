@@ -76,6 +76,8 @@ class ConstExpr: public AbstractExpr {
 // type of unary expression(Only apply to float!)
 enum UnaryExprType {
   Minus,               // ~x, get 0 - x.
+  Sgn,                 // sgn(x).
+  Abs,                 // abs(x)
   Sqrt,                // x^0.5
   Sqr,                 // x^2
   Ln,                  // ln(x)

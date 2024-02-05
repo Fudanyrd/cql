@@ -144,6 +144,12 @@ auto getOperator(const std::string &word) -> AbstractExprRef {
   if (word == "tan") {
     return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Tan));
   }
+  if (word == "sgn") {
+    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sgn));
+  }
+  if (word == "abs") {
+    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Abs));
+  }
   if (word == "asin") {
     return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Asin));
   }

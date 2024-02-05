@@ -173,7 +173,7 @@ auto Partitioner::deepPartition(Command &cmd) -> bool {
         i += 2;
         continue;
       }
-      throw std::domain_error("@ doesn't follow a column identifier?? Impossible!");
+      throw std::domain_error("# doesn't follow a column identifier?? Impossible!");
     }
     if (cmd.words_[i] == "@") {
       // definitely a variable identifier.
