@@ -21,17 +21,17 @@ auto isp(const std::string &optr) -> int {
     return 1;
   }
   if (optr == "*" || optr == "/") {
-    return 6;
+    return 5;
   }
   if (optr == "+" || optr == "-") {
-    return 4;
+    return 3;
   }
   if (optr == ")") {
-    return 9;
+    return 8;
   }
   // if not match any, probably a unary operator like:
   // sin, cos, tan, ...
-  return 2;
+  return 7;
 }
 
 /************************************************
@@ -46,20 +46,20 @@ auto isp(const std::string &optr) -> int {
  */
 auto icp(const std::string &optr) -> int {
   if (optr == "(") {
-    return 9;
+    return 8;
   }
   if (optr == "*" || optr == "/") {
-    return 5;
+    return 4;
   }
   if (optr == "+" || optr == "-") {
-    return 3;
+    return 2;
   }
   if (optr == ")") {
     return 1;
   }
   // if not match any, probably something like:
   // sin, cos, tan, ...
-  return 7;
+  return 6;
 }
 
 /**
