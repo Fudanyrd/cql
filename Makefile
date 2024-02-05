@@ -58,6 +58,10 @@ exprUtilTest: expr_util.o expr.o type.o expr_util_test.cpp
 	$(compile) expr_util_test.cpp
 	g++ -o expr_util expr_util.o expr.o expr_util_test.o type.o
 
+calculator: calculator.cpp expr_util.o expr.o type.o string_util.o Partitioner.o
+	$(compile) calculator.cpp
+	g++ -o calculator calculator.o expr_util.o expr.o type.o string_util.o Partitioner.o
+
 ######################
 # cleaning workspace #
 ######################
