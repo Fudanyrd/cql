@@ -83,9 +83,11 @@ class Partitioner {
 
   /**
    * @brief Do the following changes to cmd:
-   * (1) merge '<' '=' and '>' '=' into "<=", ">="
+   * (1) merge '<' '=' and '>' '=' into "<=", ">=".
    * (2) merge 'order'/'group' 'by' into one key word.
    * (3) return false if the command is empty.
+   * (4) merge string literal(wrapped by single token).
+   * (5) merge variables(begin with '@') and columns(begin with '#') identifier.
    * @return true if current command is not null.
    */
   static auto deepPartition(Command &cmd) -> bool;

@@ -5,6 +5,11 @@
 namespace cql {
 
 void Command::printTo(std::ostream &os) const {
+  if (words_.empty()) {
+    // nothing to print!
+    return;
+  }
+
   for (const auto &str : words_) {
     os << str << ' ';
   }
@@ -26,9 +31,25 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
   Command cmd;               // temp command.
   std::vector<Command> res;  // result.
   bool is_comment = false;   // whether current character is comment.
+  bool is_literal = false;   // whether current character is in a string literal.
   std::string word;
 
   while (iter < command_size) {
+    if (is_literal) {
+      // just read all characters into the word.
+      std::string word;
+      while (iter < command_size && commands[iter] != '\'') {
+        word.push_back(commands[iter++]);
+      }
+      if (iter == command_size) {
+        throw std::domain_error("unmatched single quote(reaching the end)? Impossible!");
+      }
+      cmd.words_.push_back(word);
+      cmd.words_.push_back(std::string(1, '\''));
+      ++iter;
+      is_literal = false;
+      continue;
+    }
     if (is_comment) {
       // scan util the end of the line; do nothing.
       while (iter < command_size && commands[iter] != '\n') {
@@ -64,6 +85,13 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
         // else it may be '(' ')' ',' "--", '+', '-', '*', '/', ...
         // you have to foresee comment...
         // they are all composed of one character.
+        if (current == '\'') {
+          // string literal!
+          is_literal = true;
+          cmd.words_.push_back(std::string(1, current));
+          ++iter;
+          continue;
+        }
         if (current == ';') {
           // end of a cmd.
           res.push_back(cmd);
@@ -137,6 +165,38 @@ auto Partitioner::deepPartition(Command &cmd) -> bool {
         i+=2;
         continue;
       }
+    }
+    if (cmd.words_[i] == "#") {
+      // definitely a column identifier
+      if (i + 1 < numWords) {
+        new_words.push_back("#" + cmd.words_[i + 1]);
+        i += 2;
+        continue;
+      }
+      throw std::domain_error("@ doesn't follow a column identifier?? Impossible!");
+    }
+    if (cmd.words_[i] == "@") {
+      // definitely a variable identifier.
+      if (i + 1 < numWords) {
+        new_words.push_back("#" + cmd.words_[i + 1]);
+        i += 2;
+        continue;
+      }
+      throw std::domain_error("@ doesn't follow a variable identifier?? Impossible!");
+    }
+
+    if (cmd.words_[i] == "\'") {
+      // definitely a string literal.
+      std::string temp = cmd.words_[i++];
+      while (i < numWords && cmd.words_[i] != "\'") {
+        temp += cmd.words_[i++];
+      }
+      if (i == numWords) {
+        throw std::domain_error("unmatched character \' used by string literal?? Impossible!");
+      }
+      temp += cmd.words_[i++];
+      new_words.push_back(temp);
+      continue;
     }
 
     // else, it is a common word.
