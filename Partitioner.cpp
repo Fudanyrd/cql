@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "Partitioner.h"
 
 namespace cql {
@@ -90,6 +92,59 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
   }
 
   return res;
+}
+
+auto Partitioner::deepPartition(Command &cmd) -> bool {
+  if (cmd.words_.empty()) { return false; }
+  std::vector<std::string> new_words;
+  size_t numWords = cmd.words_.size();
+
+  for (size_t i = 0; i < numWords; ) {
+    if (cmd.words_[i] == "order") {
+      if (i + 1 < numWords && cmd.words_[i + 1] == "by") {
+        new_words.push_back("order by");
+        i += 2; 
+        continue;
+      }
+      // should not execute a buggy query
+      cmd.Clear();
+      throw std::domain_error("order doesn't follow a keyword by!\n"
+      "NOTE: order is a reserved keyword in cql");
+    }
+    if (cmd.words_[i] == "group") {
+      if (i + 1 < numWords && cmd.words_[i + 1] == "by") {
+        new_words.push_back("group by");
+        i += 2; 
+        continue;
+      }
+      // should not execute a buggy query
+      cmd.Clear();
+      throw std::domain_error("group doesn't follow a keyword by!\n"
+      "NOTE: group is a reserved keyword in cql");
+    }
+    if (cmd.words_[i] == "<") {
+      // maybe it's <= or >=
+      if (i + 1 < numWords && cmd.words_[i + 1] == "=") {
+        new_words.push_back("<=");
+        i+=2;
+        continue;
+      }
+    }
+    if (cmd.words_[i] == ">") {
+      // maybe it's <= or >=
+      if (i + 1 < numWords && cmd.words_[i + 1] == "=") {
+        new_words.push_back(">=");
+        i+=2;
+        continue;
+      }
+    }
+
+    // else, it is a common word.
+    new_words.push_back(cmd.words_[i++]);
+  }
+
+  cmd.words_ = new_words;
+  return true;
 }
 
 auto Partitioner::printTo(std::ostream &os, const std::vector<Command> &commands) -> size_t {

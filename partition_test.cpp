@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <vector>
 
 #include "string_util.h"
@@ -15,6 +16,14 @@ auto main(int argc, char **argv) -> int {
 
   // check if the partitioner generated correct number of cmds.
   std::cout << "found " << num << " command(s)" << std::endl;
+  for (cql::Command &cmd : cmds) {
+    try {
+      cql::Partitioner::deepPartition(cmd);
+    } catch (std::domain_error &e) {
+      cout << e.what() << endl;
+    }
+  }
+  cql::Partitioner::printTo(cout, cmds);
 
   return 0;
 }

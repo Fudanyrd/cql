@@ -183,27 +183,4 @@ auto BinaryExpr::toString() const -> std::string {
   return res;
 }
 
-/**********************************************************
- *                     ColumnExpr
- **********************************************************/
-auto ColumnExpr::toString() const -> std::string {
-  std::string res = "#";
-  size_t col = column_idx_;
-  if (col == 0) {
-    res.push_back('0');
-    return res;
-  }
-
-  std::stack<char> temp;
-  while (col > 0) {
-    temp.push(static_cast<int>(col % 10U) + '0');
-    col = col / 10U;
-  }
-
-  while (!temp.empty()) {
-    res.push_back(temp.top());
-    temp.pop();
-  }
-  return res;
-}
 }  // namespace cql

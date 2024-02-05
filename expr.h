@@ -8,11 +8,16 @@
 
 namespace cql {
 
+/**
+ * NOTE: all variables in cql language begins with '@'.
+ * so as to simplify works done by compiler.
+ */
 enum ExprType {
   Column,    // column expression.
   Const,     // constant expression
   Unary,     // unary expression of float type
-  Binary     // binary expression of float type
+  Binary,    // binary expression of float type
+  Variable   // TODO(Fudanyrd): add variable type.
 };
 
 // abstract arithmetic expression.
@@ -46,16 +51,19 @@ class AbstractExpr {
 using AbstractExprRef = std::shared_ptr<AbstractExpr>;
 
 class ConstExpr: public AbstractExpr {
- private:
-  DataBox data_;
  public:
+  DataBox data_;
+
   ConstExpr() { expr_type_ = ExprType::Const; }
+  ConstExpr(TypeId tp, const std::string &dat): data_(tp, dat) {
+    expr_type_ = ExprType::Const;
+  }
 
   // in this operator tuple is unused.
   auto Evaluate([[maybe_unused]] const Tuple *tuple) const -> DataBox { return data_; }
 
   auto toString() const -> std::string {
-    switch(data_type_) {
+    switch(data_.getType()) {
       case INVALID: return "NULL";
       case Char: return data_.getStrValue();
       case Float: return "<float const>";
@@ -87,13 +95,12 @@ enum UnaryExprType {
 
 // unary expression
 class UnaryExpr: public AbstractExpr {
- private:
+ public:
   UnaryExprType optr_type_{invalid};    // operator type.
   AbstractExprRef child_{nullptr};      // has only one child
 
- public:
   UnaryExpr() { expr_type_ = ExprType::Unary; }
-  UnaryExpr(UnaryExprType optr, AbstractExprRef ref): optr_type_(optr), child_(ref) {
+  UnaryExpr(UnaryExprType optr, AbstractExprRef ref = nullptr): optr_type_(optr), child_(ref) {
     expr_type_ = ExprType::Unary;
   }
 
@@ -113,31 +120,50 @@ enum BinaryExprType {
 
 // binary expression
 class BinaryExpr: public AbstractExpr {
- private:
+ public:
   AbstractExprRef left_child_{nullptr};
   AbstractExprRef right_child_{nullptr};
   BinaryExprType optr_type_{unknown};
 
- public:
   BinaryExpr() { expr_type_ = ExprType::Binary; }
   BinaryExpr(BinaryExprType tp, AbstractExprRef left, AbstractExprRef right):
-    left_child_(left), right_child_(right), optr_type_(tp) {expr_type_ = ExprType::Binary; }
+    left_child_(left), right_child_(right), optr_type_(tp) { expr_type_ = ExprType::Binary; }
 
   auto Evaluate(const Tuple *tuple) const -> DataBox;
   auto toString() const -> std::string;
 };
 
 // column expression(assosiated with a column with certain kind of tuple)
+// all column name has prefix '#'.
 class ColumnExpr: public AbstractExpr {
- private:
+ public:
  /** column index of the tuple to extract from.*/
   size_t column_idx_{0U};
+  /** Column name of the column('#' included). */
+  std::string column_name_;
  public:
   ColumnExpr() { expr_type_ = ExprType::Column; } 
-  ColumnExpr(size_t idx): column_idx_(idx) { expr_type_ = ExprType::Column; }
+  ColumnExpr(size_t idx, const std::string &col_nm): column_idx_(idx), column_name_(col_nm) { 
+    expr_type_ = ExprType::Column; 
+  }
 
   auto Evaluate(const Tuple *tuple) const -> DataBox { return tuple->getColumnData(column_idx_); }
-  auto toString() const -> std::string;
+  auto toString() const -> std::string { return column_name_; }
+};
+
+// variable expression
+class VariableExpr: public AbstractExpr {
+ public:
+  std::string var_name_{"@"};    // variable name(including prefix '@')
+
+  VariableExpr() { expr_type_ = ExprType::Variable; }
+  VariableExpr(const std::string &name): var_name_(name) {
+    expr_type_ = ExprType::Variable;
+  }
+
+  // currently not able to do this...
+  auto Evaluate(const Tuple *tuple) const -> DataBox { return {0.0}; }
+  auto toString() const -> std::string { return var_name_; }
 };
 
 }  // namespace cql;
