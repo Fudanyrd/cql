@@ -4,3 +4,5 @@
 # csv and sql files are used for testing(ie. modified frequently)
 *.csv
 *.sql
+# build binary targets
+build
