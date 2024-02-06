@@ -10,6 +10,8 @@ void Schema::printColumnTo(std::ostream &os, const std::pair<TypeId, std::string
       os << ":float"; break;
     case TypeId::Char:
       os << ":char";  break;
+    case TypeId::Bool:
+      os << ":bool"; break;
     default:
       os << ":invalid";  break;
   }
@@ -42,6 +44,10 @@ Schema::Schema(const std::string &header) {
     if (column[1] == "char") {
       matched = true;
       columns_.push_back(std::pair<TypeId, std::string>(TypeId::Char, column[0]));
+    }
+    if (column[1] == "bool") {
+      matched = true;
+      columns_.push_back(std::pair<TypeId, std::string>(TypeId::Bool, column[0]));
     }
     if (!matched) {
       columns_.push_back(std::pair<TypeId, std::string>(TypeId::INVALID, column[0]));

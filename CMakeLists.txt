@@ -30,5 +30,8 @@ target_link_libraries(calculator partitioner expr str_util type)
 add_executable(expr_util expr_util_test.cpp)
 target_link_libraries(expr_util expr type)
 # variable_manager_test
-add_executable(variable_manager variable_manager_test)
+add_executable(variable_manager variable_manager_test.cpp)
 target_link_libraries(variable_manager type)
+# table_test
+add_executable(table_test table_test.cpp)
+target_link_libraries(table_test table type str_util)
