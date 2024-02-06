@@ -17,8 +17,14 @@ auto UnaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
 
   DataBox child_val = child_->Evaluate(tuple);
   const double chd = child_val.getFloatValue();
-  if (!child_val.getType() == TypeId::Float) {
+  if (child_val.getType() == TypeId::Char) {
     throw std::domain_error("calling unary operator on string?? impossible!");
+  }
+  if (child_val.getType() == TypeId::Bool) {
+    if (optr_type_ == UnaryExprType::Not) {
+      return {!child_val.getBoolValue()};
+    }
+    throw std::domain_error("unary operator on bool other than not?? Impossible!");
   }
   double res = 0.0;
   switch(optr_type_) {
@@ -60,6 +66,9 @@ auto UnaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
       break;
     case UnaryExprType::Atan:
       res = atan(chd);
+      break;
+    case UnaryExprType::Not:
+      throw std::domain_error("not operator on a float?? Impossible!");
       break;
     default:
       throw std::domain_error("invalid unary operator type!");
@@ -110,6 +119,9 @@ auto UnaryExpr::toString() const -> std::string {
     case UnaryExprType::Atan:
       res += "arctan(";
       break;
+    case UnaryExprType::Not:
+      res += "not(";
+      break;
     default:
       throw std::domain_error("invalid unary operator type!");
   }
@@ -127,6 +139,22 @@ auto BinaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
 
   auto left_box = left_child_->Evaluate(tuple);
   auto right_box = right_child_->Evaluate(tuple);
+  switch(optr_type_) {
+    case BinaryExprType::LessThan:
+      return DataBox::LessThan(left_box, right_box);
+    case BinaryExprType::LessThanOrEqual:
+      return DataBox::LessThanOrEqual(left_box, right_box);
+    case BinaryExprType::GreaterThan:
+      return DataBox::GreaterThan(left_box, right_box);
+    case BinaryExprType::GreaterThanOrEqual:
+      return DataBox::GreaterThanOrEqual(left_box, right_box);
+    case BinaryExprType::EqualTo:
+      return DataBox::EqualTo(left_box, right_box);
+    case BinaryExprType::NotEqualTo:
+      return DataBox::NotEqualTo(left_box, right_box);
+    // others will be handled later.
+  }
+
   if (left_box.getType() != right_box.getType()) {
     throw std::domain_error("left and right return type is different?? Impossible!");
   } 
@@ -137,6 +165,25 @@ auto BinaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
       throw std::domain_error("wanna operation on string other than sum? Impossible!");
     }
     return DataBox(TypeId::Char, left_box.getStrValue() + right_box.getStrValue());
+  }
+  if (left_box.getType() == TypeId::Bool) {
+    bool left_r = left_box.getBoolValue();
+    bool right_r = right_box.getBoolValue();
+    bool res;
+    switch(optr_type_) {
+      case BinaryExprType::And: 
+        res = left_r & right_r;
+        break;
+      case BinaryExprType::Or: 
+        res = left_r | right_r;
+        break;
+      case BinaryExprType::Xor:
+        res = left_r ^ right_r;
+        break;
+      default:
+        throw std::domain_error("wanna operation on bool other than ^&|? Impossible!");
+    }
+    return {res};
   }
   
   // OK, float type.
@@ -159,8 +206,11 @@ auto BinaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
     case BinaryExprType::power:
       res = pow(left_val, right_val);
       break;
+    case BinaryExprType::And: case BinaryExprType::Or: case BinaryExprType::Xor:
+      throw std::domain_error("doing logic operation(&|^) on two float?? Impossible!");
+      break;
     default:
-      throw std::domain_error("unrecognizable binary operation on float");
+      throw std::domain_error("unrecognizable binary operation on float?? Impossible!");
   }
 
   return DataBox(res);
@@ -185,6 +235,34 @@ auto BinaryExpr::toString() const -> std::string {
     case BinaryExprType::power:
       res += ")^(";
       break;
+    case BinaryExprType::And:
+      res += ") and (";
+      break;
+    case BinaryExprType::Or:
+      res += ") or (";
+      break;
+    case BinaryExprType::Xor:
+      res += ") xor (";
+      break;
+    case BinaryExprType::LessThan:
+      res += ") < (";
+      break;
+    case BinaryExprType::LessThanOrEqual:
+      res += ") <= (";
+      break;
+    case BinaryExprType::GreaterThan:
+      res += ") > (";
+      break;
+    case BinaryExprType::GreaterThanOrEqual:
+      res += ") >= (";
+      break;
+    case BinaryExprType::EqualTo:
+      res += ") == (";
+      break;
+    case BinaryExprType::NotEqualTo:
+      res += ") != (";
+      break;
+
     default:
       // throw std::domain_error("unrecognizable binary operation on float");
       res += ")<unknown operator>(";

@@ -26,7 +26,8 @@ auto main(int argc, char **argv) -> int {
     if (res.getType() == cql::TypeId::Char) {
       std::cout << res.getStrValue() << std::endl;
     } else {
-      std::cout << res.getFloatValue() << std::endl;
+      res.printTo(std::cout);
+      std::cout << std::endl;
     }
 
   }

@@ -67,6 +67,7 @@ class ConstExpr: public AbstractExpr {
       case INVALID: return "NULL";
       case Char: return data_.getStrValue();
       case Float: return "<float const>";
+      case Bool: return "<bool const>";
       default:
         return "<unknown>";
     }
@@ -88,6 +89,7 @@ enum UnaryExprType {
   Asin,                // arcsin(x)
   Acos,                // arccos(x)
   Atan,                // arctan(x)
+  Not,                 // logic not
   invalid
 };
 // this generally is enough since:
@@ -117,6 +119,15 @@ enum BinaryExprType {
   mult,    // x * y
   div,     // x / y
   power,   // x to y
+  And,     // x and y
+  Or,      // x or y
+  Xor,     // x xor y
+  LessThan,
+  LessThanOrEqual,
+  GreaterThan,
+  GreaterThanOrEqual,
+  EqualTo,
+  NotEqualTo,
   unknown
 };
 

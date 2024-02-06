@@ -1,4 +1,5 @@
 #include <stack>
+#include <unordered_map>
 
 #include "expr_util.h"
 
@@ -12,26 +13,38 @@ namespace cql {
  * priorities.
  * Defined BELOW
  ************************************************/
-
+const std::unordered_map<std::string, int> isp_table = {
+  {"(", 1},
+  // mult, div, power
+  {"*", 11},
+  {"^", 11},
+  {"/", 11},
+  // add, sub
+  {"+", 9},
+  {"-", 9},
+  // comparison
+  {"<", 7},
+  {">", 7},
+  {"<=", 7},
+  {">=", 7},
+  {"=", 7},
+  // not
+  {"not", 5},
+  // and, or, xor
+  {"and", 3},
+  {"or", 3},
+  {"xor", 3},
+  // right parentese
+  {")", 14}
+};
 /**
  * @return the in-stack priority of a operator.
  */
 auto isp(const std::string &optr) -> int {
-  if (optr == "(") {
-    return 1;
-  }
-  if (optr == "*" || optr == "/") {
-    return 5;
-  }
-  if (optr == "+" || optr == "-") {
-    return 3;
-  }
-  if (optr == ")") {
-    return 8;
-  }
+  auto iter = isp_table.find(optr);
   // if not match any, probably a unary operator like:
   // sin, cos, tan, ...
-  return 7;
+  return iter == isp_table.end() ? 13 : iter->second;
 }
 
 /************************************************
@@ -40,26 +53,38 @@ auto isp(const std::string &optr) -> int {
  * (2) in-coming priority(icp) of operators:
  * Defined BELOW
  ************************************************/
-
+const std::unordered_map<std::string, int> icp_table = {
+  {"(", 14},
+  // mult, div, power
+  {"*", 10},
+  {"^", 10},
+  {"/", 10},
+  // add, sub
+  {"+", 8},
+  {"-", 8},
+  // comparison
+  {"<", 6},
+  {">", 6},
+  {"<=", 6},
+  {">=", 6},
+  {"=", 6},
+  // not
+  {"not", 4},
+  // and, or, xor
+  {"and", 2},
+  {"or", 2},
+  {"xor", 2},
+  // right parentese
+  {")", 1}
+};
 /**
  * @return the in-coming priority of a operator.
  */
 auto icp(const std::string &optr) -> int {
-  if (optr == "(") {
-    return 8;
-  }
-  if (optr == "*" || optr == "/") {
-    return 4;
-  }
-  if (optr == "+" || optr == "-") {
-    return 2;
-  }
-  if (optr == ")") {
-    return 1;
-  }
-  // if not match any, probably something like:
+  auto iter = icp_table.find(optr);
+  // if not match any, probably a unary operator like:
   // sin, cos, tan, ...
-  return 6;
+  return iter == isp_table.end() ? 12 : iter->second;
 }
 
 /**
@@ -68,6 +93,14 @@ auto icp(const std::string &optr) -> int {
 auto getConstExpr(const std::string &word) -> AbstractExprRef {
   if (word.empty()) {
     return nullptr;
+  }
+  if (word == "True" || word == "true") {
+    // true
+    return std::make_shared<ConstExpr>(ConstExpr(TypeId::Bool, word));
+  }
+  if (word == "False" || word == "false") {
+    // false
+    return std::make_shared<ConstExpr>(ConstExpr(TypeId::Bool, word));
   }
   if (word[0] == '\'' && word[word.size() - 1] == '\'') {
     // string literal
@@ -120,6 +153,9 @@ auto getOperator(const std::string &word) -> AbstractExprRef {
     // must be one of +-*/~^
     switch (word[0]) {
       case '~': return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Minus, nullptr));
+      case '=': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::EqualTo, nullptr, nullptr));
+      case '<': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::LessThan, nullptr, nullptr));
+      case '>': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::GreaterThan, nullptr, nullptr));
       case '+': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::add, nullptr, nullptr));
       case '-': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::sub, nullptr, nullptr));
       case '*': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::mult, nullptr, nullptr));
@@ -129,6 +165,24 @@ auto getOperator(const std::string &word) -> AbstractExprRef {
     return nullptr;
   }
 
+  if (word == "<=") {
+    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::LessThanOrEqual, nullptr, nullptr));
+  }
+  if (word == ">=") {
+    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::GreaterThanOrEqual, nullptr, nullptr));
+  }
+  if (word == "and") {
+    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::And, nullptr, nullptr));
+  }
+  if (word == "or") {
+    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::Or, nullptr, nullptr));
+  }
+  if (word == "xor") {
+    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::Xor, nullptr, nullptr));
+  }
+  if (word == "not") {
+    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Not, nullptr));
+  }
   if (word == "exp") {
     return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Exp));
   }
