@@ -32,9 +32,20 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
   std::vector<Command> res;  // result.
   bool is_comment = false;   // whether current character is comment.
   bool is_literal = false;   // whether current character is in a string literal.
+  bool is_identifier;        // whether current character is in a indentifier.
+  is_identifier = false;
   std::string word;
 
   while (iter < command_size) {
+    if (is_identifier) {
+      std::string identifier;
+      while (iter < command_size && isIdentifier(commands[iter])) {
+        identifier.push_back(commands[iter++]);
+      }
+      cmd.words_.push_back(identifier);
+      is_identifier = false;
+      continue;
+    }
     if (is_literal) {
       // just read all characters into the word.
       std::string word;
@@ -85,6 +96,13 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
         // else it may be '(' ')' ',' "--", '+', '-', '*', '/', ...
         // you have to foresee comment...
         // they are all composed of one character.
+        // handle identifier.
+        if (current == '#' || current == '@') {
+          is_identifier = true;
+          cmd.words_.push_back(std::string(1, current));
+          ++iter;
+          continue;
+        }
         if (current == '\'') {
           // string literal!
           is_literal = true;
@@ -178,7 +196,7 @@ auto Partitioner::deepPartition(Command &cmd) -> bool {
     if (cmd.words_[i] == "@") {
       // definitely a variable identifier.
       if (i + 1 < numWords) {
-        new_words.push_back("#" + cmd.words_[i + 1]);
+        new_words.push_back("@" + cmd.words_[i + 1]);
         i += 2;
         continue;
       }

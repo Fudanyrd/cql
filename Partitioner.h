@@ -69,6 +69,15 @@ class Partitioner {
     return (ch >= '0' && ch <= '9') || ch == '.';
   }
 
+  /**
+   * @return true if current character is in a identifier.
+   * NOTE: identifier in cql consists of [a-z], [A-Z], [0-9], _
+   * it is case sensitive!
+   */
+  static auto isIdentifier(char ch) -> bool {
+    return isAlphabet(ch) || ch == '_' || (ch >= '0' && ch <= '9');
+  }
+
  public: 
   /**
    * @brief Initialize a Partitioner.
