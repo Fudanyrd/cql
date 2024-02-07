@@ -10,12 +10,12 @@ namespace cql {
  *                     UnaryExpr
  **********************************************************/
 
-auto UnaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
+auto UnaryExpr::Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox {
   if (!static_cast<bool>(child_)) {
     throw std::domain_error("child is null?? impossible!");
   }
 
-  DataBox child_val = child_->Evaluate(tuple);
+  DataBox child_val = child_->Evaluate(tuple, var_mgn);
   const double chd = child_val.getFloatValue();
   if (child_val.getType() == TypeId::Char) {
     throw std::domain_error("calling unary operator on string?? impossible!");
@@ -132,13 +132,13 @@ auto UnaryExpr::toString() const -> std::string {
 /**********************************************************
  *                     BinaryExpr
  **********************************************************/
-auto BinaryExpr::Evaluate(const Tuple *tuple) const -> DataBox {
+auto BinaryExpr::Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox {
   if (!(static_cast<bool>(left_child_) && static_cast<bool>(right_child_))) {
     throw std::domain_error("left or right child is null");
   }
 
-  auto left_box = left_child_->Evaluate(tuple);
-  auto right_box = right_child_->Evaluate(tuple);
+  auto left_box = left_child_->Evaluate(tuple, var_mgn);
+  auto right_box = right_child_->Evaluate(tuple, var_mgn);
   switch(optr_type_) {
     case BinaryExprType::LessThan:
       return DataBox::LessThan(left_box, right_box);

@@ -5,6 +5,7 @@
 
 #include "tuple.h"
 #include "type.h"
+#include "variable_manager.h"
 
 namespace cql {
 
@@ -40,7 +41,7 @@ class AbstractExpr {
   /**
    * @return the value of a tuple.
    */
-  virtual auto Evaluate(const Tuple *tuple) const -> DataBox = 0;
+  virtual auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox = 0;
 
   /**
    * @brief convert a expression to string.
@@ -60,7 +61,7 @@ class ConstExpr: public AbstractExpr {
   }
 
   // in this operator tuple is unused.
-  auto Evaluate([[maybe_unused]] const Tuple *tuple) const -> DataBox { return data_; }
+  auto Evaluate([[maybe_unused]] const Tuple *tuple, VariableManager *var_mgn) const -> DataBox { return data_; }
 
   auto toString() const -> std::string {
     switch(data_.getType()) {
@@ -108,7 +109,7 @@ class UnaryExpr: public AbstractExpr {
     expr_type_ = ExprType::Unary;
   }
 
-  auto Evaluate(const Tuple *tuple) const -> DataBox;
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox;
   auto toString() const -> std::string;
 };
 
@@ -142,7 +143,7 @@ class BinaryExpr: public AbstractExpr {
   BinaryExpr(BinaryExprType tp, AbstractExprRef left, AbstractExprRef right):
     left_child_(left), right_child_(right), optr_type_(tp) { expr_type_ = ExprType::Binary; }
 
-  auto Evaluate(const Tuple *tuple) const -> DataBox;
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox;
   auto toString() const -> std::string;
 };
 
@@ -160,7 +161,7 @@ class ColumnExpr: public AbstractExpr {
     expr_type_ = ExprType::Column; 
   }
 
-  auto Evaluate(const Tuple *tuple) const -> DataBox { 
+  auto Evaluate(const Tuple *tuple, [[maybe_unused]] VariableManager *var_mgn) const -> DataBox { 
     auto schema_ptr = tuple->getSchema();
     for (size_t i = 0; i < schema_ptr->getNumCols(); ++i) {
       if (column_name_ == schema_ptr->getColumn(i).second) {
@@ -183,7 +184,10 @@ class VariableExpr: public AbstractExpr {
   }
 
   // currently not able to do this...
-  auto Evaluate(const Tuple *tuple) const -> DataBox { return {0.0}; }
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox {
+    cqlAssert(static_cast<bool>(var_mgn), "variable manager is nullptr");
+    return var_mgn->Retrive(var_name_)[0];
+  }
   auto toString() const -> std::string { return var_name_; }
 };
 

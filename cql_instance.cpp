@@ -99,6 +99,58 @@ void cqlInstance::execute(const Command &complete) {
     return;
   }
 
+  // add variable.
+  // support both 'var' and 'set' to declare variables.
+  if (complete.words_[0] == "set" || complete.words_[0] == "var") {
+    if (!complete.words_[1][0] == '@') {
+      std::cout << "variable doesn't begin with \'@\'?? Impossible!" << std::endl;
+      return;
+    } 
+    cqlAssert(complete.words_[2] == "=", "invalid variable syntax");
+    std::vector<std::pair<size_t, size_t>> exprs = splitBy(complete.words_, ",", 3, complete.words_.size());
+    std::vector<DataBox> dat;
+    for (const auto &pair : exprs) {
+      dat.push_back(toExprRef(complete.words_, pair.first, pair.second)->Evaluate(nullptr, &var_mgn_));
+    }
+    // var_mgn_[complete.words_[1]] = dat;
+    var_mgn_.Add(complete.words_[1], dat);
+
+    std::cout << "OK, register variable " << complete.words_[1] << '.' << std::endl;
+    return;
+  }
+  // display the variable list.
+  // can also be exprs!
+  // syntax: disp/watch @var1 @var2 ...(no commas)
+  if (complete.words_[0] == "disp" || complete.words_[0] == "watch") {
+    size_t count = 0;
+    for (size_t i = 1; i < complete.words_.size(); ++i) {
+      if (complete.words_[i][0] != '@') {
+        std::cout << "variable doesn't begin with \'@\'?? Impossible!" << std::endl;
+      } else {
+        std::vector<DataBox> dat;
+        try {
+          dat = var_mgn_.Retrive(complete.words_[i]);
+        } catch (std::domain_error &e) {
+          std::cout << "retrieving a non-exist variable " << complete.words_[i] 
+                    << "?? Impossible!" << std::endl;
+          continue;
+        }
+        ++count;
+        std::cout << complete.words_[i] << " = {";
+        if (!dat.empty()) {
+          dat[0].printTo(std::cout);
+        }
+        for (size_t c = 1; c < dat.size(); ++c) {
+          std::cout << ',';
+          dat[c].printTo(std::cout);
+        }
+        std::cout << '}' << std::endl;
+      }
+    }
+    std::cout << "OK, displayed " << count << " variables." << std::endl;
+    return;
+  }
+
   // load some tables into memory.
   if (complete.words_[0] == "load") {
     size_t i = 1;
@@ -198,7 +250,7 @@ auto cqlInstance::PerformInsert(const ParserLog &log) -> size_t {
   for (size_t i = 0; i < rows; ++i) {
     std::vector<DataBox> boxes;
     for (size_t c = 0; c < cols; ++c) {
-      boxes.push_back(log.columns_[count++]->Evaluate(nullptr));
+      boxes.push_back(log.columns_[count++]->Evaluate(nullptr, &var_mgn_));
     }
     table_info.table_ptr_->insertTuple(boxes);
   }
@@ -222,7 +274,7 @@ auto cqlInstance::PerformDelete(const ParserLog &log) -> size_t {
 
   for (; row < tuples.size(); ++row) {
     if (static_cast<bool>(log.where_)) {
-      DataBox evaluation = log.where_->Evaluate(&(tuples[row]));
+      DataBox evaluation = log.where_->Evaluate(&(tuples[row]), &var_mgn_);
       if (evaluation.getBoolValue()) {
         if (table_info.table_ptr_->deleteTuple(row)) { ++count; }
       }
@@ -256,9 +308,9 @@ auto cqlInstance::PerformUpdate(const ParserLog &log) -> size_t {
   }
   cqlAssert(col != schema_ptr->getNumCols(), "unable to recognize column name");
   for (; row < tuples.size(); ++row) {
-    DataBox box = log.columns_[0]->Evaluate(&(tuples[row]));
+    DataBox box = log.columns_[0]->Evaluate(&(tuples[row]), &var_mgn_);
     if (static_cast<bool>(log.where_)) {
-      DataBox pred = log.where_->Evaluate(&(tuples[row]));
+      DataBox pred = log.where_->Evaluate(&(tuples[row]), &var_mgn_);
       if (pred.getBoolValue()) {
         if (table_info.table_ptr_->updateTuple(box, row, col)) { ++count; }
       }

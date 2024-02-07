@@ -38,7 +38,7 @@ class VariableManager {
   auto Retrive(const std::string &var) const -> const std::vector<DataBox> & {
     auto iter = variables_.find(var);
     if (iter == variables_.end()) {
-      throw std::domain_error("retrieving a non-exist variable") ;
+      throw std::domain_error("retrieving a non-exist variable?? Impossible!");
     }
     return iter->second;
   }
