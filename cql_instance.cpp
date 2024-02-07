@@ -167,6 +167,9 @@ void cqlInstance::execute(const Command &complete) {
       std::cout << "OK, " << tuples << " tuple(s) deleted." << std::endl;
       break;
     case ExecutionType::Update:
+      tuples = PerformUpdate(log);
+      std::cout << "OK, " << tuples << " tuple(s) updated." << std::endl;
+      break;
     case ExecutionType::Select:
     default:
       throw std::domain_error("not implemented");
@@ -225,6 +228,42 @@ auto cqlInstance::PerformDelete(const ParserLog &log) -> size_t {
       }
     } else {
       if (table_info.table_ptr_->deleteTuple(row)) { ++count; }
+    }
+  }
+
+  table_info.is_dirty_ = true;
+  return count;
+}
+
+auto cqlInstance::PerformUpdate(const ParserLog &log) -> size_t {
+  if (table_mgn_.find(log.table_) == table_mgn_.end()) {
+    std::cout << "NOTE: maybe you've forgot to load the table " << log.table_ << '.' << std::endl;
+    throw std::domain_error("trying to update from a non-existing table?? Impossible!");
+  }
+  size_t row = 0;
+  size_t count = 0;
+  TableInfo &table_info = table_mgn_[log.table_];
+  auto schema_ptr = table_info.table_ptr_->getSchema();
+  const std::vector<Tuple> &tuples = table_info.table_ptr_->getTuples();
+  // find the column to update.
+  size_t col = 0;
+  std::string col_name;
+  for (size_t i = 1; i < log.update_column_.size(); ++i) {
+    col_name.push_back(log.update_column_[i]);
+  }
+  for (; col < schema_ptr->getNumCols(); ++col) {
+    if (col_name == schema_ptr->getColumn(col).second) { break; }
+  }
+  cqlAssert(col != schema_ptr->getNumCols(), "unable to recognize column name");
+  for (; row < tuples.size(); ++row) {
+    DataBox box = log.columns_[0]->Evaluate(&(tuples[row]));
+    if (static_cast<bool>(log.where_)) {
+      DataBox pred = log.where_->Evaluate(&(tuples[row]));
+      if (pred.getBoolValue()) {
+        if (table_info.table_ptr_->updateTuple(box, row, col)) { ++count; }
+      }
+    } else {
+      if (table_info.table_ptr_->updateTuple(box, row, col)) { ++count; }
     }
   }
 

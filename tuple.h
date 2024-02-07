@@ -56,6 +56,20 @@ class Tuple {
      }
      return false;
    }
+
+  /**
+   * Update the value of a column.
+   * @param col_idx: column index to update.
+   * @param box: the value after updating.
+   * @return true if not deleted.
+   */
+  auto update(const DataBox &box, size_t col_idx) -> bool {
+    if (!is_deleted_) {
+      data_[col_idx] = box;
+      return true;
+    }
+    return false;
+  }
 };
 
 }  // namespace cql

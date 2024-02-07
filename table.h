@@ -54,6 +54,13 @@ class Table {
    * @brief delete the tuple on index.
    */
   auto deleteTuple(size_t idx) -> bool { return tuples_[idx].markDelete(); }
+
+  /**
+   * @brief update the column of a tuple.
+   */
+  auto updateTuple(const DataBox &box, size_t row, size_t col) -> bool {
+    return tuples_[row].update(box, col);
+  }
 };
 
 }

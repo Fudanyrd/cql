@@ -92,12 +92,23 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
   }
 
   if (cmd.words_[0] == "update") {
-    // correct syntax: update <table> set <col> = <expr>
+    // correct syntax: update <table> set <col> = <expr> (where clause)
     res.exec_type_ = ExecutionType::Update;
     res.table_ = cmd.words_[1];
     cqlAssert(cmd.words_[2] == "set", "Invalid update syntax");
     res.update_column_ = cmd.words_[3];
     cqlAssert(cmd.words_[4] == "=", "Invalid update syntax");
+    size_t i;
+    for (i = 4; i < cmd.words_.size(); ++i) {
+      if (cmd.words_[i] == "where") { break; }
+    }
+    if (i != cmd.words_.size()) {
+      // cmd.words_[i] == "where"
+      res.where_ = toExprRef(cmd.words_, i + 1, cmd.words_.size());
+      res.columns_.push_back(toExprRef(cmd.words_, 5, i));
+      return res;
+    }
+    res.where_ = nullptr;
     // res.columns_.push_back(std::vector<std::string>(cmd.words_.begin() + 5, cmd.words_.end()));
     res.columns_.push_back(toExprRef(cmd.words_, 5, cmd.words_.size()));
     return res;
