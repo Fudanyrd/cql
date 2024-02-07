@@ -56,4 +56,17 @@ auto matchBracket(const std::vector<std::string> &words, const std::string &left
  */
 auto endsWith(const std::string &line, char ch) -> bool;
 
+/**
+ * @brief construct a string with certain number of characters.
+ */
+auto makeStr(size_t size, char ch) -> std::string;
+/**
+ * A friendly note on why to do this:
+ * See what happens if you do:
+ * ```
+ * std::string str = {1, '('};
+ * std::cout << str.size() << std::endl;
+ * ```
+ */
+
 }  // namespace cql

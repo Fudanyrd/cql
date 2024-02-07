@@ -44,6 +44,11 @@ class Table {
    * @return number of rows in the table.
    */
   auto getNumRows() const -> size_t { return tuples_.size(); }
+
+  /**
+   * @brief insert a tuple into the table.
+   */
+  void insertTuple(const std::vector<DataBox> &data) { tuples_.push_back({&schema_, data}); }
 };
 
 }

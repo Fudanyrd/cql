@@ -12,6 +12,7 @@ project(cql)
 ########################
 add_library(expr STATIC expr.cpp expr_util.cpp)
 add_library(parser STATIC Parser.cpp)
+target_link_libraries(parser expr)
 add_library(partitioner STATIC Partitioner.cpp)
 add_library(str_util STATIC string_util.cpp)
 add_library(table STATIC table.cpp tuple.cpp schema.cpp)  # tuple and schema can be seen as part of table

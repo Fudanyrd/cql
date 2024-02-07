@@ -153,6 +153,52 @@ void cqlInstance::execute(const Command &complete) {
     std::cout << "OK" << std::endl;
     return;
   }
+
+  auto log = Parser::Parse(complete);
+  switch(log.exec_type_) {
+    case ExecutionType::Insert: {
+      size_t tuples = PerformInsert(log);
+      std::cout << "OK, " << tuples << " tuple(s) inserted." << std::endl;
+      break;
+    }
+    case ExecutionType::Delete:
+    case ExecutionType::Update:
+    case ExecutionType::Select:
+    default:
+      throw std::domain_error("not implemented");
+  }
+}
+
+/************************************************
+ ***          Helper Functions                ***
+ ************************************************/
+/**
+ * @return number of tuples inserted.
+ */
+auto cqlInstance::PerformInsert(const ParserLog &log) -> size_t {
+  if (table_mgn_.find(log.table_) == table_mgn_.end()) {
+    std::cout << "NOTE: maybe you've forgot to load the table " << log.table_ << '.' << std::endl;
+    throw std::domain_error("trying to insert into a non-existing table?? Impossible!");
+  }
+  TableInfo &table_info = table_mgn_[log.table_];
+  const Schema *schema_ptr = table_info.table_ptr_->getSchema();
+  size_t cols = schema_ptr->getNumCols();
+  size_t rows = log.columns_.size();   
+  // this can only be checked at runtime.
+  cqlAssert(rows % cols == 0, "length of one of the tuple(s) is errorneous");
+  rows /= cols;
+  size_t count = 0;
+  for (size_t i = 0; i < rows; ++i) {
+    std::vector<DataBox> boxes;
+    for (size_t c = 0; c < cols; ++c) {
+      boxes.push_back(log.columns_[count++]->Evaluate(nullptr));
+    }
+    table_info.table_ptr_->insertTuple(boxes);
+  }
+
+  // mark as modified.
+  table_info.is_dirty_ = true;
+  return rows;
 }
 
 }  // namespace cql

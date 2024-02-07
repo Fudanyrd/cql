@@ -35,6 +35,7 @@ class cqlInstance {
   std::unordered_map<std::string, TableInfo> table_mgn_;  // table manager.
 
   void execute(const Command &complete);
+  auto PerformInsert(const ParserLog &log) -> size_t;
  public:
   cqlInstance() = default;
   // disallow copy.

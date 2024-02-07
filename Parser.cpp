@@ -111,12 +111,12 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
     cqlAssert(cmd.words_[1] == "into", "Invalid insert syntax");
     res.table_ = cmd.words_[2];
     cqlAssert(cmd.words_[3] == "values", "Invalid insert syntax");
-    cqlAssert(cmd.words_[4] == "(", "Invalid insert syntax");
-    auto brackets = matchBracket(cmd.words_, {1, '('}, 4, cmd.words_.size());
+    cqlAssert(cmd.words_[4] == "{", "Invalid insert syntax(NOTE: tuple in cql begins with \'{\'.)");
+    auto brackets = matchBracket(cmd.words_, makeStr(1, '{'), 4, cmd.words_.size());
     // deal with the contents of each bracket.
     for (const auto &bracket : brackets) {
       // split by comma
-      auto exprs = splitBy(cmd.words_, {1, ','}, bracket.first, bracket.second);
+      auto exprs = splitBy(cmd.words_, makeStr(1, ','), bracket.first + 1, bracket.second);
       for (const auto &expr : exprs) {
         res.columns_.push_back(toExprRef(cmd.words_, expr.first, expr.second));
       }

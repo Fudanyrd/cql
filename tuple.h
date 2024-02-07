@@ -18,6 +18,7 @@ class Tuple {
  public:
   Tuple() = default;
   Tuple(const Schema *schema): schema_(schema) {}
+  Tuple(const Schema *schema, const std::vector<DataBox> &data): data_(data), schema_(schema) {}
 
   /**
    * @brief load data from string(displaying a line from .csv files)

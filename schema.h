@@ -41,6 +41,11 @@ class Schema {
   auto getColumn(size_t idx) const -> const std::pair<TypeId, std::string> & { return columns_[idx]; }
 
   /**
+   * @return number of columns.
+   */
+  auto getNumCols(void) const -> size_t { return columns_.size(); }
+
+  /**
    * @brief print the schema to the given output stream.
    */
   void printTo(std::ostream &os) const;

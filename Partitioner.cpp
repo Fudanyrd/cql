@@ -56,7 +56,8 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
         throw std::domain_error("unmatched single quote(reaching the end)? Impossible!");
       }
       cmd.words_.push_back(word);
-      cmd.words_.push_back(std::string(1, '\''));
+      // cmd.words_.push_back(std::string(1, '\''));
+      cmd.words_.push_back(makeStr(1, '\''));
       ++iter;
       is_literal = false;
       continue;
@@ -99,14 +100,16 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
         // handle identifier.
         if (current == '#' || current == '@') {
           is_identifier = true;
-          cmd.words_.push_back(std::string(1, current));
+          // cmd.words_.push_back(std::string(1, current));
+          cmd.words_.push_back(makeStr(1, current));
           ++iter;
           continue;
         }
         if (current == '\'') {
           // string literal!
           is_literal = true;
-          cmd.words_.push_back(std::string(1, current));
+          // cmd.words_.push_back(std::string(1, current));
+          cmd.words_.push_back(makeStr(1, current));
           ++iter;
           continue;
         }
@@ -130,7 +133,8 @@ auto Partitioner::partition(const std::string &commands) -> std::vector<Command>
           continue;
         }
         // for other non-alphabetic characters...
-        cmd.words_.push_back(std::string(1, current));
+        // cmd.words_.push_back(std::string(1, current));
+        cmd.words_.push_back(makeStr(1, current));
         ++iter;
       }
 

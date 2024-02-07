@@ -110,4 +110,10 @@ auto endsWith(const std::string &line, char ch) -> bool {
   return false;
 }
 
+auto makeStr(size_t size, char ch) -> std::string {
+  std::string res;
+  for (size_t i = 0; i < size; ++i) { res.push_back(ch); }
+  return res;
+}
+
 }  // namespace cql
