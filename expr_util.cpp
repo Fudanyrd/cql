@@ -304,8 +304,128 @@ auto toPostOrder(const std::vector<std::string> &words) -> std::vector<AbstractE
   return expr_refs;
 }
 
+auto toPostOrder(const std::vector<std::string> &words, size_t begin, size_t end) 
+  -> std::vector<AbstractExprRef> {
+  // psuedo code of how to achieve this:
+  // if word is const expr; then output.
+  // else: # op is the top of stack
+  //    if icp(word) > isp(op); then push word in stack.
+  //    if icp(word) < isp(op); then pop and output.
+  //    else pop and don't output.
+  std::stack<std::string> operators;       // operator stack.
+  std::vector<AbstractExprRef> expr_refs;  // store the result.
+  // for (size_t i = 0; i < words.size(); ++i) 
+  for (size_t i = begin; i < end; ++i) {
+    const std::string &word = words[i];
+    auto current = getConstExpr(word);
+    if (static_cast<bool>(current)) {
+      // OK, is constant expression.
+      expr_refs.push_back(current);
+      // ++i;
+      continue;
+    }
+
+    current = getVariableExpr(word);
+    if (static_cast<bool>(current)) {
+      // OK, is a variable.
+      expr_refs.push_back(current);
+      // ++i;
+      continue;
+    }
+
+    current = getColumnExpr(word);
+    if (static_cast<bool>(current)) {
+      // OK, is column from a table...
+      expr_refs.push_back(current);
+      // ++i;
+      continue;
+    }
+
+    current = getOperator(word);
+    if (static_cast<bool>(current) || word == "(" || word == ")") {
+      // OK, is a variable.
+      if (!operators.empty()) {
+        int in_come = icp(word);              // icp(word) in psuedo code
+        int in_stack = isp(operators.top());  // isp(op) in psuedo code
+        if (in_come > in_stack) {
+          operators.push(word);
+          // ++i;
+        } else {
+          if (in_come < in_stack) {
+            if (!(operators.top() == "(" || operators.top() == ")")) {
+              expr_refs.push_back(getOperator(operators.top()));
+            }
+            operators.pop();
+            // operators.push(word);
+            --i;  // --i; ++i; <=> nop
+          } else {
+            // to this point, only one circumstance is possible:
+            // operators.top() == "(" and word = ")".
+            operators.pop();
+            // ++i;
+          }
+        }
+
+      } else {
+        operators.push(word);
+        // ++i;
+      }
+    } else {
+      std::string error_msg = "ERROR: unable to recognize word " + word;
+      throw std::domain_error(error_msg.c_str());
+    }
+
+  }
+
+  while (!operators.empty()) {
+    if (operators.top() != "(" && operators.top() != ")") {
+      expr_refs.push_back(getOperator(operators.top()));
+    }
+    operators.pop();
+  }
+  return expr_refs;
+}
+
 auto toExprRef(const std::vector<std::string> &words) -> AbstractExprRef {
   std::vector<AbstractExprRef> refs = toPostOrder(words);
+  std::stack<AbstractExprRef> operands;
+  for (const auto &ref : refs) {
+    switch(ref->GetExprType()) {
+      case ExprType::Unary: {
+        if (operands.empty()) {
+          throw std::domain_error("unary expr missing operand?? Impossible!");
+        }
+        auto unary_ptr = dynamic_cast<UnaryExpr *>(ref.get());
+        unary_ptr->child_ = operands.top();
+        operands.pop();
+        operands.push(std::make_shared<UnaryExpr>(UnaryExpr(unary_ptr->optr_type_, unary_ptr->child_)));
+        break;
+      }
+
+      case ExprType::Binary: {
+        if (operands.size() < 2) {
+          throw std::domain_error("binary expr missing one or both operand?? Impossible!");
+        }
+        auto binary_ptr = dynamic_cast<BinaryExpr *>(ref.get());
+        binary_ptr->right_child_ = operands.top();
+        operands.pop();
+        binary_ptr->left_child_ = operands.top();
+        operands.pop();
+        operands.push(std::make_shared<BinaryExpr>(BinaryExpr(binary_ptr->optr_type_, 
+                                                    binary_ptr->left_child_, binary_ptr->right_child_)));
+        break;
+      }
+      // maybe constants, variables, columns.
+      default:
+        operands.push(ref);
+    }
+  }
+
+  return operands.top();
+}
+
+auto toExprRef(const std::vector<std::string> &words, size_t begin, size_t end) -> AbstractExprRef {
+  std::vector<AbstractExprRef> refs = toPostOrder(words, begin, end);
   std::stack<AbstractExprRef> operands;
   for (const auto &ref : refs) {
     switch(ref->GetExprType()) {

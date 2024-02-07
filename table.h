@@ -15,6 +15,7 @@ class Table {
 
  public:
   Table() = default;
+  Table(const std::string &header): schema_({header}) {}
   ~Table() = default;
 
   /**

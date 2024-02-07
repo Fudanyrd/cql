@@ -22,9 +22,23 @@ namespace cql {
 auto toPostOrder(const std::vector<std::string> &words) -> std::vector<AbstractExprRef>;
 
 /**
+ * @brief like the toPostOrder above, this time set range of parsing.
+ * @param begin: start point of parsing.
+ * @param end: end point of parsing(NOTE: not included).
+ */
+auto toPostOrder(const std::vector<std::string> &words, size_t begin, size_t end) -> std::vector<AbstractExprRef>;
+
+/**
  * @brief convert a series of words(done by partitioner) into a
  * Abstract Expression Tree.
  */
 auto toExprRef(const std::vector<std::string> &words) -> AbstractExprRef;
+
+/**
+ * @brief same as toExprRef above, this time set range of parsing.
+ * @param begin: start point of parsing.
+ * @param end: end point of parsing(NOTE: not included).
+ */
+auto toExprRef(const std::vector<std::string> &words, size_t begin, size_t end) -> AbstractExprRef;
 
 }  // namespace cql

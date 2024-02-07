@@ -50,4 +50,10 @@ auto splitBy(const std::vector<std::string> &words, const std::string &separator
 auto matchBracket(const std::vector<std::string> &words, const std::string &left, size_t begin, size_t end) 
   -> std::vector<std::pair<size_t, size_t>>;
 
+/**
+ * @brief judge if a string is end with a character.
+ * Ignore character like ' ', '\t', '\n'.
+ */
+auto endsWith(const std::string &line, char ch) -> bool;
+
 }  // namespace cql

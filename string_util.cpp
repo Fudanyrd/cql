@@ -100,4 +100,14 @@ auto matchBracket(const std::vector<std::string> &words, const std::string &left
   return res;
 }
 
+auto endsWith(const std::string &line, char ch) -> bool {
+  if (line.empty()) { return false; }
+  for(size_t i = line.size() - 1; i >= 0; --i) {
+    if (line[i] != ' ' && line[i] != '\t' && line[i] != '\n') {
+      return line[i] == ch;
+    }
+  }
+  return false;
+}
+
 }  // namespace cql
