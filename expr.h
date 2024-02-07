@@ -160,7 +160,15 @@ class ColumnExpr: public AbstractExpr {
     expr_type_ = ExprType::Column; 
   }
 
-  auto Evaluate(const Tuple *tuple) const -> DataBox { return tuple->getColumnData(column_idx_); }
+  auto Evaluate(const Tuple *tuple) const -> DataBox { 
+    auto schema_ptr = tuple->getSchema();
+    for (size_t i = 0; i < schema_ptr->getNumCols(); ++i) {
+      if (column_name_ == schema_ptr->getColumn(i).second) {
+        return tuple->getColumnData(i); 
+      }
+    }
+    throw std::domain_error(("unable to recognize column name " + column_name_ + "?? Impossible!").c_str());
+  }
   auto toString() const -> std::string { return column_name_; }
 };
 

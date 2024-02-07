@@ -137,7 +137,9 @@ auto getColumnExpr(const std::string &word) -> AbstractExprRef {
     // not a variable word!
     return nullptr;
   }
-  return std::make_shared<ColumnExpr>(ColumnExpr(0U, word));
+  std::string actual;
+  for (size_t i = 1; i < word.size(); ++i) { actual.push_back(word[i]); }
+  return std::make_shared<ColumnExpr>(ColumnExpr(0U, actual));
 }
 
 /**

@@ -49,6 +49,11 @@ class Table {
    * @brief insert a tuple into the table.
    */
   void insertTuple(const std::vector<DataBox> &data) { tuples_.push_back({&schema_, data}); }
+
+  /**
+   * @brief delete the tuple on index.
+   */
+  auto deleteTuple(size_t idx) -> bool { return tuples_[idx].markDelete(); }
 };
 
 }

@@ -36,6 +36,7 @@ class cqlInstance {
 
   void execute(const Command &complete);
   auto PerformInsert(const ParserLog &log) -> size_t;
+  auto PerformDelete(const ParserLog &log) -> size_t;
  public:
   cqlInstance() = default;
   // disallow copy.

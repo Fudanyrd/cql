@@ -155,13 +155,17 @@ void cqlInstance::execute(const Command &complete) {
   }
 
   auto log = Parser::Parse(complete);
+  size_t tuples;
   switch(log.exec_type_) {
     case ExecutionType::Insert: {
-      size_t tuples = PerformInsert(log);
+      tuples = PerformInsert(log);
       std::cout << "OK, " << tuples << " tuple(s) inserted." << std::endl;
       break;
     }
     case ExecutionType::Delete:
+     tuples = PerformDelete(log);
+      std::cout << "OK, " << tuples << " tuple(s) deleted." << std::endl;
+      break;
     case ExecutionType::Update:
     case ExecutionType::Select:
     default:
@@ -199,6 +203,33 @@ auto cqlInstance::PerformInsert(const ParserLog &log) -> size_t {
   // mark as modified.
   table_info.is_dirty_ = true;
   return rows;
+}
+/**
+ * @return number of tuples deleted.
+ */
+auto cqlInstance::PerformDelete(const ParserLog &log) -> size_t {
+  if (table_mgn_.find(log.table_) == table_mgn_.end()) {
+    std::cout << "NOTE: maybe you've forgot to load the table " << log.table_ << '.' << std::endl;
+    throw std::domain_error("trying to delete from a non-existing table?? Impossible!");
+  }
+  size_t row = 0;    // current row number;
+  size_t count = 0;   // number of tuples deleted.
+  TableInfo &table_info = table_mgn_[log.table_];
+  const std::vector<Tuple> &tuples = table_info.table_ptr_->getTuples();
+
+  for (; row < tuples.size(); ++row) {
+    if (static_cast<bool>(log.where_)) {
+      DataBox evaluation = log.where_->Evaluate(&(tuples[row]));
+      if (evaluation.getBoolValue()) {
+        if (table_info.table_ptr_->deleteTuple(row)) { ++count; }
+      }
+    } else {
+      if (table_info.table_ptr_->deleteTuple(row)) { ++count; }
+    }
+  }
+
+  table_info.is_dirty_ = true;
+  return count;
 }
 
 }  // namespace cql

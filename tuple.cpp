@@ -21,6 +21,8 @@ void Tuple::dump(std::ostream &os) const {
   if (!static_cast<bool>(schema_)) {
     throw std::domain_error("dumping an uninitialized tuple");
   }
+  // don't dump an deleted tuple!
+  if (is_deleted_) { return; }
 
   data_[i++].printTo(os);
   for (; i < data_.size(); ++i) {
