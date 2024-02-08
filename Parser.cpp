@@ -86,7 +86,7 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
     // correct syntax:
     // select {<expr1>, <expr2>, ...} from <table> 
     // (where <clause>) (order by {<expr>, <expr>, ...}) 
-    // (limit <const>) (offset <const>)
+    // (limit <const>) (offset <const>) (-> @var1, @var2, ...)
     res.exec_type_ = ExecutionType::Select;
     std::vector<size_t> keyPos = matchKeyword(cmd.words_, keywords);
     if (keyPos.size() == 1) {

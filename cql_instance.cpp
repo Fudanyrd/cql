@@ -274,16 +274,41 @@ auto cqlInstance::PerformInsert(const ParserLog &log) -> size_t {
   rows /= cols;
   size_t count = 0;
   for (size_t i = 0; i < rows; ++i) {
-    std::vector<DataBox> boxes;
+    bool is_const = true;
     for (size_t c = 0; c < cols; ++c) {
-      boxes.push_back(log.columns_[count++]->Evaluate(nullptr, &var_mgn_, 0));
+      if (is_const) { is_const = isConstExpr(log.columns_[i * cols + c]); }
     }
-    table_info.table_ptr_->insertTuple(boxes);
+    if (is_const) {
+      // if is const expr, just insert for once.
+      std::vector<DataBox> boxes;
+      for (size_t c = 0; c < cols; ++c) {
+        boxes.push_back(log.columns_[i * cols + c]->Evaluate(nullptr, &var_mgn_, 0));
+      }
+      ++count;
+      table_info.table_ptr_->insertTuple(boxes);
+      continue;
+    }
+    bool has_value = true;
+    size_t r = 0;  // size of a variable.
+    while (has_value) {
+      std::vector<DataBox> boxes;
+      DataBox box;
+      for (size_t c = 0; c < cols; ++c) {
+        box = log.columns_[i * cols + c]->Evaluate(nullptr, &var_mgn_, r);
+        boxes.push_back(box);
+        if (has_value) { has_value = (box.getType() != TypeId::INVALID); }
+      }
+      if (has_value) {
+        table_info.table_ptr_->insertTuple(boxes);
+        ++count;
+      }
+      ++r;
+    }
   }
 
   // mark as modified.
   table_info.is_dirty_ = true;
-  return rows;
+  return count;
 }
 /**
  * @return number of tuples deleted.
