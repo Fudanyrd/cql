@@ -56,6 +56,10 @@ class Tuple {
      }
      return false;
    }
+   /**
+    * @return true if the tuple is deleted.
+    */
+  auto isDeleted() const -> bool { return is_deleted_; }
 
   /**
    * Update the value of a column.

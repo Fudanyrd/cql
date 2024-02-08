@@ -84,9 +84,9 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
   ParserLog res;
   if (cmd.words_[0] == "select") {
     // correct syntax:
-    // select {<expr1>, <expr2>, ...} from <table> 
+    // select {<expr1>, <expr2>, ...} (from <table>)
     // (where <clause>) (order by {<expr>, <expr>, ...}) 
-    // (limit <const>) (offset <const>) (-> @var1, @var2, ...)
+    // (limit <const>) (offset <const>) (dest @var1, @var2, ...)
     res.exec_type_ = ExecutionType::Select;
     std::vector<size_t> keyPos = matchKeyword(cmd.words_, keywords);
     if (keyPos.size() == 1) {
@@ -98,6 +98,33 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
       return res;
     }
     cqlAssert(cmd.words_[keyPos[1]] == "from", "no table selected");
+
+    // TODO(Fudanyrd): deal with columns_.
+    auto exprs = splitBy(cmd.words_, ",", 1, keyPos[1]);
+    for (const auto &expr : exprs) {
+      res.columns_.push_back(toExprRef(cmd.words_, expr.first, expr.second));
+    }
+
+    // TODO(Fudanyrd): deal with table.
+    res.table_ = cmd.words_[keyPos[1] + 1];
+
+    // TODO(Fudanyrd): deal with where clause.
+    size_t pos = 2;  // same position as that in keywords table(defined in Parser.h, line 24)
+    if (pos >= keyPos.size()) { return res; }  // caution: index out of bounds.
+    if (cmd.words_[keyPos[pos]] == keywords[pos]) {
+      // OK, has a where predicate.
+      // select ... from ... where predicate <keyword>
+      //                     ^^^pos           ^^^ pos+1
+      res.where_ = (pos + 1) < keyPos.size() ? toExprRef(cmd.words_, keyPos[pos] + 1, keyPos[pos + 1])
+                                             : toExprRef(cmd.words_, keyPos[pos] + 1, cmd.words_.size());
+      ++pos;
+    }
+    if (pos >= keyPos.size()) { return res; }
+
+    // TODO(Fudanyrd): deal with order by.
+    // TODO(Fudanyrd): deal with limit-offset if exists.
+    // TODO(Fudanyrd): deal with dest.
+    // perhaps I have to leave this to future...
     return res;
   }
 

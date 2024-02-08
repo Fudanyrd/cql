@@ -385,6 +385,24 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
     } else {
       throw std::domain_error("no item selected?? Impossible!");
     }
+    bool is_const = true;
+    for (size_t c = 0; c < log.columns_.size(); ++c) {
+      if (!isConstExpr(log.columns_[c])) {
+        is_const = false; break;
+      }
+    }
+    if (is_const) {
+      DataBox box = log.columns_[0]->Evaluate(nullptr, &var_mgn_, 0);
+      box.printTo(std::cout);
+      for (size_t c = 1; c < log.columns_.size(); ++c) {
+        std::cout << ',';
+        box = log.columns_[c]->Evaluate(nullptr, &var_mgn_, 0);
+        box.printTo(std::cout);
+      }
+      std::cout << std::endl;
+      return;
+    }
+
     size_t row = 0;  // row number
     bool is_invalid = false;
     while (!is_invalid) {
@@ -403,7 +421,39 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
     }
     return;
   }
-  throw std::domain_error("not implemented, please wait...");
+  // throw std::domain_error("not implemented, please wait...");
+  // currently support select <exprs> from <table> where <predicate>.
+  AbstractExprRef predicate = static_cast<bool>(log.where_) ? log.where_ :
+                              std::make_shared<ConstExpr>(ConstExpr(TypeId::Bool, "True"));
+  // log.printTo(std::cout);
+  // std::cout << std::endl;
+  if (table_mgn_.find(log.table_) == table_mgn_.end()) {
+    std::cout << "NOTE: maybe you've forgot to load the table " << log.table_ << '.' << std::endl;
+    throw std::domain_error("trying to select from a non-existing table?? Impossible!");
+  }
+  TableInfo &table_info = table_mgn_[log.table_];
+  const std::vector<Tuple> &tuples = table_info.table_ptr_->getTuples();
+  if (log.columns_.empty()) {
+    throw std::domain_error("no item selected?? Impossible!");
+  }
+  for (size_t row = 0; row < tuples.size(); ++row) {
+    // deal with tuples one by one.
+    if (tuples[row].isDeleted()) { continue; }
+    if (!predicate->Evaluate(&(tuples[row]), &var_mgn_, 0).getBoolValue()) { continue; }
+    DataBox box = log.columns_[0]->Evaluate(&(tuples[row]), &var_mgn_, 0); 
+    box.printTo(std::cout);
+    for (size_t col = 1; col < log.columns_.size(); ++col) {
+      // hopefully this won't mingle with variable table...
+      std::cout << ',';
+      box = log.columns_[col]->Evaluate(&(tuples[row]), &var_mgn_, 0); 
+      box.printTo(std::cout);
+      // append it to a variable(if required)...
+    }
+
+    std::cout << std::endl;
+  }
+
+  return;
 }
 
 }  // namespace cql

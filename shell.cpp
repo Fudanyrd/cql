@@ -3,6 +3,6 @@
 auto main(int argc, char **argv) -> int {
   cql::cqlInstance instance;
   instance.run();
-  instance.dump();
+  // instance.dump();
   return 0;
 }
