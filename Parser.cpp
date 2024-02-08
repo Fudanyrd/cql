@@ -76,6 +76,15 @@ void ParserLog::printTo(std::ostream &os) const {
   }
   os << ']' << std::endl;
 
+  /** Destination */
+  if (!destination_.empty()) {
+    os << "destination = {" << destination_[0];
+    for (size_t i = 1; i < destination_.size(); ++i) {
+      os << ',' << destination_[i];
+    }
+    os << '}' << std::endl;
+  }
+
   /** End */
   os << '}' << std::endl;
 }
@@ -89,6 +98,7 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
     // (limit <const>) (offset <const>) (dest @var1, @var2, ...)
     res.exec_type_ = ExecutionType::Select;
     std::vector<size_t> keyPos = matchKeyword(cmd.words_, keywords);
+    for (auto p : keyPos) { std::cout << p << ','; } std::cout << std::endl;
     if (keyPos.size() == 1) {
       // select <expr1>, <expr2>, ...
       auto pairs = splitBy(cmd.words_, ",", 1, cmd.words_.size());
@@ -122,9 +132,60 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
     if (pos >= keyPos.size()) { return res; }
 
     // TODO(Fudanyrd): deal with order by.
-    // TODO(Fudanyrd): deal with limit-offset if exists.
+    pos = 2;
+    for (; pos < keyPos.size(); ++pos) {
+      if (cmd.words_[keyPos[pos]] == "order by") { break; }
+    }
+    if (pos != keyPos.size()) {
+      size_t left = keyPos[pos] + 1;
+      size_t right = pos + 1 < keyPos.size() ? keyPos[pos + 1] : cmd.words_.size();
+      std::vector<std::pair<size_t, size_t>> pairs = splitBy(cmd.words_, ",", left, right);
+      for (const auto &pair : pairs) {
+        if (cmd.words_[pair.second - 1] == "desc") {
+          res.order_by_.push_back(toExprRef(cmd.words_, pair.first, pair.second - 1));
+          res.order_by_type_.push_back(OrderByType::DESC);
+        } else {
+          if (cmd.words_[pair.second - 1] == "asc") {
+            res.order_by_.push_back(toExprRef(cmd.words_, pair.first, pair.second - 1));
+            res.order_by_type_.push_back(OrderByType::ASC);
+          } else {
+            // NOTE: by default order in ascending order.
+            res.order_by_.push_back(toExprRef(cmd.words_, pair.first, pair.second));
+            res.order_by_type_.push_back(OrderByType::ASC);
+          }
+        }
+      }
+    }
+
+    // TODO(Fudanyrd): deal with limit if exists.
+    pos = 2;
+    for (; pos < keyPos.size(); ++pos) {
+      if (cmd.words_[keyPos[pos]] == "limit") { break; }
+    }
+    if (pos != keyPos.size()) {
+      res.limit_ = static_cast<size_t>(atoi(cmd.words_[keyPos[pos] + 1].c_str()));
+    }
+
+    // TODO(Fudanyrd): deal with offset if exists.
+    pos = 2;
+    for (; pos < keyPos.size(); ++pos) {
+      if (cmd.words_[keyPos[pos]] == "offset") { break; }
+    }
+    if (pos != keyPos.size()) {
+      res.offset_ = static_cast<size_t>(atoi(cmd.words_[keyPos[pos] + 1].c_str()));
+    }
+
     // TODO(Fudanyrd): deal with dest.
-    // perhaps I have to leave this to future...
+    pos = 2;
+    for (; pos < keyPos.size(); ++pos) {
+      if (cmd.words_[keyPos[pos]] == "dest") { break; }
+    }
+    if (pos != keyPos.size()) {
+      for (size_t it = keyPos[pos] + 1; it < cmd.words_.size(); ++it) {
+        if (cmd.words_[it] != ",") { res.destination_.push_back(cmd.words_[it]); }
+      }
+    }
+
     return res;
   }
 
