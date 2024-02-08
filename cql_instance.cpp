@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 #include "cql_instance.h"
@@ -257,6 +258,28 @@ void cqlInstance::execute(const Command &complete) {
 /************************************************
  ***          Helper Functions                ***
  ************************************************/
+// can help you with sorting the tuples.
+std::vector<AbstractExprRef> order_by_;
+std::vector<OrderByType> order_by_type_;
+class TupleHelper {
+ public:
+  static auto compare(const Tuple &t1, const Tuple &t2) -> bool {
+    for (size_t i = 0; i < order_by_.size(); ++i) {
+      DataBox b1 = order_by_[i]->Evaluate(&t1, nullptr, 0);
+      DataBox b2 = order_by_[i]->Evaluate(&t2, nullptr, 0);
+      if (!DataBox::EqualTo(b1, b2).getBoolValue()) {
+        if (order_by_type_[i] == OrderByType::ASC) {
+          return DataBox::LessThan(b1, b2).getBoolValue() ? true : false;
+        } else {
+          return DataBox::LessThan(b1, b2).getBoolValue() ? false : true;
+        }
+      }
+    }
+
+    return true;
+  }
+};
+
 /**
  * @return number of tuples inserted.
  */
@@ -436,7 +459,13 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
     throw std::domain_error("trying to select from a non-existing table?? Impossible!");
   }
   TableInfo &table_info = table_mgn_[log.table_];
-  const std::vector<Tuple> &tuples = table_info.table_ptr_->getTuples();
+  std::vector<Tuple> tuples = table_info.table_ptr_->getTuples();
+  if (!log.order_by_.empty()) {
+    order_by_ = log.order_by_;
+    order_by_type_ = log.order_by_type_;
+    std::sort(tuples.begin(), tuples.end(), TupleHelper::compare);
+  }
+
   if (log.columns_.empty()) {
     throw std::domain_error("no item selected?? Impossible!");
   }

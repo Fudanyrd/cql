@@ -74,6 +74,19 @@ class Tuple {
     }
     return false;
   }
+
+  /**
+   * @brief get data box by column name.
+   * @return a invalid data box if not found.
+   */
+  auto retrive(const std::string &col) const -> DataBox {
+    for (size_t i = 0; i < schema_->getNumCols(); ++i) {
+      if (col == schema_->getColumn(i).second) {
+        return data_[i];
+      }
+    }
+    return {TypeId::INVALID, ""};
+  }
 };
 
 }  // namespace cql
