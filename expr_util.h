@@ -41,4 +41,9 @@ auto toExprRef(const std::vector<std::string> &words) -> AbstractExprRef;
  */
 auto toExprRef(const std::vector<std::string> &words, size_t begin, size_t end) -> AbstractExprRef;
 
+/** 
+ * @return true if the expression is const expr(ie. not include ColumnExpr and VariableExpr)
+ */
+auto isConstExpr(const AbstractExprRef &root) -> bool;
+
 }  // namespace cql

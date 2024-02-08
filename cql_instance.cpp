@@ -98,6 +98,19 @@ void cqlInstance::execute(const Command &complete) {
     }
     return;
   }
+  // output the schema of a table.
+  if (complete.words_[0] == "schema") {
+    const std::string &table_ = complete.words_[1];
+    if (table_mgn_.find(table_) == table_mgn_.end()) {
+      std::cout << "NOTE: maybe you've forgot to load the table " << table_ << '.' << std::endl;
+      throw std::domain_error("trying to schema a non-existing table?? Impossible!");
+    }
+    TableInfo &table_info = table_mgn_[table_];
+    const Schema *schema_ptr = table_info.table_ptr_->getSchema();
+    schema_ptr->printTo(std::cout);
+    std::cout << "OK." << std::endl;
+    return;
+  }
 
   // add variable.
   // support both 'var' and 'set' to declare variables.
@@ -111,7 +124,12 @@ void cqlInstance::execute(const Command &complete) {
     std::vector<DataBox> dat;
     for (const auto &pair : exprs) {
       size_t i = 0;
-      DataBox box = toExprRef(complete.words_, pair.first, pair.second)->Evaluate(nullptr, &var_mgn_, i);
+      AbstractExprRef root = toExprRef(complete.words_, pair.first, pair.second);
+      DataBox box = root->Evaluate(nullptr, &var_mgn_, i);
+      if (isConstExpr(root)) {
+        dat.push_back(box);
+        continue;
+      }
       while (box.getType() != TypeId::INVALID) {
         dat.push_back(box);
         box = toExprRef(complete.words_, pair.first, pair.second)->Evaluate(nullptr, &var_mgn_, ++i);
@@ -346,7 +364,7 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
     bool is_invalid = false;
     while (!is_invalid) {
       box = log.columns_[0]->Evaluate(nullptr, &var_mgn_, row);
-      if (!is_invalid) { break; }
+      if (box.getType() == TypeId::INVALID) { break; }
       box.printTo(std::cout);
       for (size_t i = 1; i < log.columns_.size(); ++i) {
         std::cout << ',';

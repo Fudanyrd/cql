@@ -464,4 +464,25 @@ auto toExprRef(const std::vector<std::string> &words, size_t begin, size_t end) 
   return operands.top();
 }
 
+auto isConstExpr(const AbstractExprRef &root) -> bool {
+  if (!static_cast<bool>(root)) {
+    throw std::domain_error("trying to tell if a null expr tree is const?? Impossible!");
+  }
+  const UnaryExpr *unary_ptr;
+  const BinaryExpr *bin_ptr;
+  switch(root->GetExprType()) {
+    case ExprType::Column: case ExprType::Variable:
+      return false;
+    case ExprType::Const:
+      return true;
+    case ExprType::Unary:
+      unary_ptr = dynamic_cast<const UnaryExpr *>(root.get());
+      return isConstExpr(unary_ptr->child_);
+    case ExprType::Binary:
+      bin_ptr = dynamic_cast<const BinaryExpr *>(root.get());
+      return isConstExpr(bin_ptr->left_child_) && 
+             isConstExpr(bin_ptr->right_child_);
+  }
+}
+
 }  // namespace cql

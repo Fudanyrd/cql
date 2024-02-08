@@ -64,9 +64,7 @@ class ConstExpr: public AbstractExpr {
   }
 
   // in this operator tuple is unused.
-  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox { 
-    return idx == 0 ? data_ : DataBox(TypeId::INVALID, ""); 
-  }
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox { return data_; }
 
   auto toString() const -> std::string {
     switch(data_.getType()) {
