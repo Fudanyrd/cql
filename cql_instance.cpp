@@ -448,6 +448,9 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
     if (!predicate->Evaluate(&(tuples[row]), &var_mgn_, 0).getBoolValue()) { continue; }
     if (count < log.offset_) { ++count; continue; }
     DataBox box = log.columns_[0]->Evaluate(&(tuples[row]), &var_mgn_, 0); 
+    if (!log.destination_.empty() && log.destination_[0] != "@") {
+      var_mgn_.Append(log.destination_[0], box);
+    }
     box.printTo(std::cout);
     for (size_t col = 1; col < log.columns_.size(); ++col) {
       // hopefully this won't mingle with variable table...
@@ -455,6 +458,9 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
       box = log.columns_[col]->Evaluate(&(tuples[row]), &var_mgn_, 0); 
       box.printTo(std::cout);
       // append it to a variable(if required)...
+      if (col < log.destination_.size() && log.destination_[col] != "@") {
+        var_mgn_.Append(log.destination_[col], box);
+      }
     }
     ++count;
 

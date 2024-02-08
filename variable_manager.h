@@ -30,6 +30,14 @@ class VariableManager {
   void Add(const std::string &var, const std::vector<DataBox> &dat) {
     variables_[var] = dat;
   }
+
+  /**
+   * @brief append the value to the given variable.
+   * Create one if not exists.
+   */
+  void Append(const std::string &var, const DataBox &box) {
+    variables_[var].push_back(box);
+  }
   
   /**
    * @brief Retrive the data from the manager.

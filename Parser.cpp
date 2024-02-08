@@ -25,13 +25,13 @@ void ParserLog::printTo(std::ostream &os) const {
       break;
   }
   os << '{' << std::endl;
-  os << "table = " << table_ << std::endl;
+  os << "  table = " << table_ << std::endl;
 
   /** Update column */
-  os << "update = " << update_column_ << std::endl;
+  os << "  update = " << update_column_ << std::endl;
 
   /** Columns */
-  os << "columns = {";
+  os << "  columns = {";
   size_t i = 0;
   if (!columns_.empty()) {
     os << columns_[0]->toString();
@@ -44,15 +44,15 @@ void ParserLog::printTo(std::ostream &os) const {
 
   /** Where clause */
   if (static_cast<bool>(where_)) {
-    os << "where = " << where_->toString() << std::endl;
+    os << "  where = " << where_->toString() << std::endl;
   }
 
   /** Limit & offset */
   if (limit_ != static_cast<size_t>(-1)) {
-    os << "limit = " << limit_ << std::endl;
+    os << "  limit = " << limit_ << std::endl;
   }
   if (offset_ != 0) {
-    os << "offset = " << offset_ << std::endl;
+    os << "  offset = " << offset_ << std::endl;
   }
 
   /** Order bys */
@@ -60,7 +60,7 @@ void ParserLog::printTo(std::ostream &os) const {
   if (order_by_.size() != order_by_type_.size()) {
     throw std::domain_error("order by and order by type has differet size?? Impossible!");
   }
-  os << "order_bys = [";
+  os << "  order_bys = [";
   if (!order_by_.empty()) {
     os << "{expr=" << order_by_[i]->toString() << ", type=";
     if (order_by_type_[i] == OrderByType::ASC) {
@@ -79,7 +79,7 @@ void ParserLog::printTo(std::ostream &os) const {
 
   /** Destination */
   if (!destination_.empty()) {
-    os << "destination = {" << destination_[0];
+    os << "  destination = {" << destination_[0];
     for (size_t i = 1; i < destination_.size(); ++i) {
       os << ',' << destination_[i];
     }
