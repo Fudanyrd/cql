@@ -37,7 +37,8 @@ void ParserLog::printTo(std::ostream &os) const {
     os << columns_[0]->toString();
   }
   for (i = 1; i < columns_.size(); ++i) {
-    os << columns_[i]->toString() << ',';
+    // os << columns_[i]->toString() << ',';
+    os << ',' << columns_[i]->toString();
   }
   os << '}' << std::endl;
 
@@ -98,7 +99,7 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
     // (limit <const>) (offset <const>) (dest @var1, @var2, ...)
     res.exec_type_ = ExecutionType::Select;
     std::vector<size_t> keyPos = matchKeyword(cmd.words_, keywords);
-    for (auto p : keyPos) { std::cout << p << ','; } std::cout << std::endl;
+    // for (auto p : keyPos) { std::cout << p << ','; } std::cout << std::endl;
     if (keyPos.size() == 1) {
       // select <expr1>, <expr2>, ...
       auto pairs = splitBy(cmd.words_, ",", 1, cmd.words_.size());

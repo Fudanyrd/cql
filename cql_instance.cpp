@@ -426,6 +426,10 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
   AbstractExprRef predicate = static_cast<bool>(log.where_) ? log.where_ :
                               std::make_shared<ConstExpr>(ConstExpr(TypeId::Bool, "True"));
   // log.printTo(std::cout);
+  std::ofstream logout("cql.log", std::ios::app);
+  log.printTo(logout);
+  logout << std::endl;
+  logout.close();
   // std::cout << std::endl;
   if (table_mgn_.find(log.table_) == table_mgn_.end()) {
     std::cout << "NOTE: maybe you've forgot to load the table " << log.table_ << '.' << std::endl;
@@ -436,10 +440,13 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
   if (log.columns_.empty()) {
     throw std::domain_error("no item selected?? Impossible!");
   }
-  for (size_t row = 0; row < tuples.size(); ++row) {
+  size_t count = 0;
+  size_t max_count = log.limit_ == static_cast<size_t>(-1) ? log.limit_ : log.limit_ + log.offset_;
+  for (size_t row = 0; row < tuples.size() && count < max_count; ++row) {
     // deal with tuples one by one.
     if (tuples[row].isDeleted()) { continue; }
     if (!predicate->Evaluate(&(tuples[row]), &var_mgn_, 0).getBoolValue()) { continue; }
+    if (count < log.offset_) { ++count; continue; }
     DataBox box = log.columns_[0]->Evaluate(&(tuples[row]), &var_mgn_, 0); 
     box.printTo(std::cout);
     for (size_t col = 1; col < log.columns_.size(); ++col) {
@@ -449,6 +456,7 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
       box.printTo(std::cout);
       // append it to a variable(if required)...
     }
+    ++count;
 
     std::cout << std::endl;
   }
