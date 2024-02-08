@@ -57,6 +57,13 @@ auto matchBracket(const std::vector<std::string> &words, const std::string &left
 auto endsWith(const std::string &line, char ch) -> bool;
 
 /**
+ * @brief match keywords in a vector of words.
+ * @return a vector of indices(marking the position of keywords)
+ */
+auto matchKeyword(const std::vector<std::string> &words, const std::vector<std::string> &keywords) 
+  -> std::vector<size_t>;
+
+/**
  * @brief construct a string with certain number of characters.
  */
 auto makeStr(size_t size, char ch) -> std::string;

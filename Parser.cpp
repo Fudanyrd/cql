@@ -88,6 +88,16 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
     // (where <clause>) (order by {<expr>, <expr>, ...}) 
     // (limit <const>) (offset <const>)
     res.exec_type_ = ExecutionType::Select;
+    std::vector<size_t> keyPos = matchKeyword(cmd.words_, keywords);
+    if (keyPos.size() == 1) {
+      // select <expr1>, <expr2>, ...
+      auto pairs = splitBy(cmd.words_, ",", 1, cmd.words_.size());
+      for (const auto &pair : pairs) {
+        res.columns_.push_back(toExprRef(cmd.words_, pair.first, pair.second));
+      }
+      return res;
+    }
+    cqlAssert(cmd.words_[keyPos[1]] == "from", "no table selected");
     return res;
   }
 

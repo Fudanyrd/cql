@@ -110,7 +110,12 @@ void cqlInstance::execute(const Command &complete) {
     std::vector<std::pair<size_t, size_t>> exprs = splitBy(complete.words_, ",", 3, complete.words_.size());
     std::vector<DataBox> dat;
     for (const auto &pair : exprs) {
-      dat.push_back(toExprRef(complete.words_, pair.first, pair.second)->Evaluate(nullptr, &var_mgn_));
+      size_t i = 0;
+      DataBox box = toExprRef(complete.words_, pair.first, pair.second)->Evaluate(nullptr, &var_mgn_, i);
+      while (box.getType() != TypeId::INVALID) {
+        dat.push_back(box);
+        box = toExprRef(complete.words_, pair.first, pair.second)->Evaluate(nullptr, &var_mgn_, ++i);
+      }
     }
     // var_mgn_[complete.words_[1]] = dat;
     var_mgn_.Add(complete.words_[1], dat);
@@ -223,6 +228,9 @@ void cqlInstance::execute(const Command &complete) {
       std::cout << "OK, " << tuples << " tuple(s) updated." << std::endl;
       break;
     case ExecutionType::Select:
+      PerformSelect(log);
+      std::cout << "OK." << std::endl;
+      break;
     default:
       throw std::domain_error("not implemented");
   }
@@ -250,7 +258,7 @@ auto cqlInstance::PerformInsert(const ParserLog &log) -> size_t {
   for (size_t i = 0; i < rows; ++i) {
     std::vector<DataBox> boxes;
     for (size_t c = 0; c < cols; ++c) {
-      boxes.push_back(log.columns_[count++]->Evaluate(nullptr, &var_mgn_));
+      boxes.push_back(log.columns_[count++]->Evaluate(nullptr, &var_mgn_, 0));
     }
     table_info.table_ptr_->insertTuple(boxes);
   }
@@ -274,7 +282,7 @@ auto cqlInstance::PerformDelete(const ParserLog &log) -> size_t {
 
   for (; row < tuples.size(); ++row) {
     if (static_cast<bool>(log.where_)) {
-      DataBox evaluation = log.where_->Evaluate(&(tuples[row]), &var_mgn_);
+      DataBox evaluation = log.where_->Evaluate(&(tuples[row]), &var_mgn_, 0);
       if (evaluation.getBoolValue()) {
         if (table_info.table_ptr_->deleteTuple(row)) { ++count; }
       }
@@ -308,9 +316,9 @@ auto cqlInstance::PerformUpdate(const ParserLog &log) -> size_t {
   }
   cqlAssert(col != schema_ptr->getNumCols(), "unable to recognize column name");
   for (; row < tuples.size(); ++row) {
-    DataBox box = log.columns_[0]->Evaluate(&(tuples[row]), &var_mgn_);
+    DataBox box = log.columns_[0]->Evaluate(&(tuples[row]), &var_mgn_, 0);
     if (static_cast<bool>(log.where_)) {
-      DataBox pred = log.where_->Evaluate(&(tuples[row]), &var_mgn_);
+      DataBox pred = log.where_->Evaluate(&(tuples[row]), &var_mgn_, 0);
       if (pred.getBoolValue()) {
         if (table_info.table_ptr_->updateTuple(box, row, col)) { ++count; }
       }
@@ -321,6 +329,38 @@ auto cqlInstance::PerformUpdate(const ParserLog &log) -> size_t {
 
   table_info.is_dirty_ = true;
   return count;
+}
+
+void cqlInstance::PerformSelect(const ParserLog &log) {
+  if (log.table_.empty()) {
+    // OK, select <expr1>, <expr2>, ...;
+    DataBox box;
+    if (!log.columns_.empty()) {
+      // box = log.columns_[0]->Evaluate(nullptr, &var_mgn_, 0); 
+      // box.printTo(std::cout);
+      // pass
+    } else {
+      throw std::domain_error("no item selected?? Impossible!");
+    }
+    size_t row = 0;  // row number
+    bool is_invalid = false;
+    while (!is_invalid) {
+      box = log.columns_[0]->Evaluate(nullptr, &var_mgn_, row);
+      if (!is_invalid) { break; }
+      box.printTo(std::cout);
+      for (size_t i = 1; i < log.columns_.size(); ++i) {
+        std::cout << ',';
+        box = log.columns_[i]->Evaluate(nullptr, &var_mgn_, row);
+        box.printTo(std::cout);
+        if (!is_invalid) { is_invalid = box.getType() == TypeId::INVALID; }
+      }
+
+      ++row;
+      std::cout << std::endl;
+    }
+    return;
+  }
+  throw std::domain_error("not implemented, please wait...");
 }
 
 }  // namespace cql

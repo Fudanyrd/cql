@@ -40,8 +40,11 @@ class AbstractExpr {
   
   /**
    * @return the value of a tuple.
+   * If it is a variable, return the idx(th) element of it.
+   * If out of bounds, return a data box with invalid type.
    */
-  virtual auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox = 0;
+  virtual auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) 
+    const -> DataBox = 0;
 
   /**
    * @brief convert a expression to string.
@@ -61,7 +64,9 @@ class ConstExpr: public AbstractExpr {
   }
 
   // in this operator tuple is unused.
-  auto Evaluate([[maybe_unused]] const Tuple *tuple, VariableManager *var_mgn) const -> DataBox { return data_; }
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox { 
+    return idx == 0 ? data_ : DataBox(TypeId::INVALID, ""); 
+  }
 
   auto toString() const -> std::string {
     switch(data_.getType()) {
@@ -109,7 +114,7 @@ class UnaryExpr: public AbstractExpr {
     expr_type_ = ExprType::Unary;
   }
 
-  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox;
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox;
   auto toString() const -> std::string;
 };
 
@@ -143,7 +148,7 @@ class BinaryExpr: public AbstractExpr {
   BinaryExpr(BinaryExprType tp, AbstractExprRef left, AbstractExprRef right):
     left_child_(left), right_child_(right), optr_type_(tp) { expr_type_ = ExprType::Binary; }
 
-  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox;
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox;
   auto toString() const -> std::string;
 };
 
@@ -161,7 +166,7 @@ class ColumnExpr: public AbstractExpr {
     expr_type_ = ExprType::Column; 
   }
 
-  auto Evaluate(const Tuple *tuple, [[maybe_unused]] VariableManager *var_mgn) const -> DataBox { 
+  auto Evaluate(const Tuple *tuple, [[maybe_unused]] VariableManager *var_mgn, size_t idx) const -> DataBox { 
     auto schema_ptr = tuple->getSchema();
     for (size_t i = 0; i < schema_ptr->getNumCols(); ++i) {
       if (column_name_ == schema_ptr->getColumn(i).second) {
@@ -184,9 +189,10 @@ class VariableExpr: public AbstractExpr {
   }
 
   // currently not able to do this...
-  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn) const -> DataBox {
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox {
     cqlAssert(static_cast<bool>(var_mgn), "variable manager is nullptr");
-    return var_mgn->Retrive(var_name_)[0];
+    const std::vector<DataBox> &data = var_mgn->Retrive(var_name_);
+    return idx >= data.size() ? DataBox(TypeId::INVALID, "") : data[idx];
   }
   auto toString() const -> std::string { return var_name_; }
 };

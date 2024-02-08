@@ -100,6 +100,20 @@ auto matchBracket(const std::vector<std::string> &words, const std::string &left
   return res;
 }
 
+auto matchKeyword(const std::vector<std::string> &words, const std::vector<std::string> &keywords) 
+  -> std::vector<size_t> {
+  size_t i = 0;
+  size_t key = 0;
+  std::vector<size_t> res;
+  while (i < words.size() && key < keywords.size()) {
+    if (words[i] == keywords[key]) {
+      res.push_back(i); ++key;
+    }
+    ++i;
+  }
+  return res;
+}
+
 auto endsWith(const std::string &line, char ch) -> bool {
   if (line.empty()) { return false; }
   for(size_t i = line.size() - 1; i >= 0; --i) {
