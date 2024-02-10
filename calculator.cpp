@@ -17,7 +17,7 @@ auto main(int argc, char **argv) -> int {
     cql::DataBox res; //  = root->Evaluate(nullptr);
     try {
       root = cql::toExprRef(cmd.words_);
-      res = root->Evaluate(nullptr, nullptr);
+      res = root->Evaluate(nullptr, nullptr, 0);
     } catch (std::domain_error &e) {
       std::cout << e.what() << std::endl;
       continue;
