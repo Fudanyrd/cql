@@ -31,6 +31,12 @@ class Schema {
   Schema(const std::string &header);
 
   /**
+   * @brief Append a column to columns_
+   * This is useful when constructing schemas.
+   */
+  void AppendCol(TypeId type, const std::string &name) { columns_.push_back({type, name}); }
+
+  /**
    * @return the information of all columns.
    */
   auto getColumns() const -> const std::vector<std::pair<TypeId, std::string>> & { return columns_; }

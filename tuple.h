@@ -41,9 +41,16 @@ class Tuple {
    auto getData() const -> const std::vector<DataBox> & { return data_; }
 
   /**
-   * @return the data at a given column.
+   * @return number of columns of the tuple.
    */
-  auto getColumnData(size_t column_idx) const -> DataBox { return data_[column_idx]; }
+  auto getSize() const -> size_t { return data_.size(); }
+
+  /**
+   * @return the data at a given column, INVALID value if out of range.
+   */
+  auto getColumnData(size_t column_idx) const -> DataBox { 
+    return column_idx >= data_.size() ? DataBox(TypeId::INVALID, "") : data_[column_idx];
+   }
 
    /**
     * @brief logically delete a tuple.

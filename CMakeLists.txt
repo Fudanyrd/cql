@@ -11,16 +11,19 @@ project(cql)
 ### Static Libraries ###
 ########################
 add_library(expr STATIC expr.cpp expr_util.cpp)
+add_library(executor STATIC executor.cpp)
 add_library(parser STATIC Parser.cpp)
 target_link_libraries(parser expr)
 add_library(partitioner STATIC Partitioner.cpp)
+add_library(planner STATIC Planner.cpp)
+target_link_libraries(planner executor)
 add_library(str_util STATIC string_util.cpp)
 add_library(table STATIC table.cpp tuple.cpp schema.cpp)  # tuple and schema can be seen as part of table
 add_library(type STATIC type.cpp)
 
 # cql instance
 add_library(instance STATIC cql_instance.cpp)
-target_link_libraries(instance expr parser partitioner str_util table type)
+target_link_libraries(instance expr parser partitioner planner str_util table type)
 
 ################
 ### Products ###

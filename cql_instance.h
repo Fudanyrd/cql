@@ -12,6 +12,7 @@
 #include "expr.h"
 #include "Partitioner.h"
 #include "Parser.h"
+#include "planner.h"
 #include "string_util.h"
 #include "table.h"
 #include "variable_manager.h"

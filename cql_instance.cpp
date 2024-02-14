@@ -398,105 +398,19 @@ auto cqlInstance::PerformUpdate(const ParserLog &log) -> size_t {
 }
 
 void cqlInstance::PerformSelect(const ParserLog &log) {
-  if (log.table_.empty()) {
-    // OK, select <expr1>, <expr2>, ...;
-    DataBox box;
-    if (!log.columns_.empty()) {
-      // box = log.columns_[0]->Evaluate(nullptr, &var_mgn_, 0); 
-      // box.printTo(std::cout);
-      // pass
-    } else {
-      throw std::domain_error("no item selected?? Impossible!");
-    }
-    bool is_const = true;
-    for (size_t c = 0; c < log.columns_.size(); ++c) {
-      if (!isConstExpr(log.columns_[c])) {
-        is_const = false; break;
-      }
-    }
-    if (is_const) {
-      DataBox box = log.columns_[0]->Evaluate(nullptr, &var_mgn_, 0);
-      box.printTo(std::cout);
-      for (size_t c = 1; c < log.columns_.size(); ++c) {
-        std::cout << ',';
-        box = log.columns_[c]->Evaluate(nullptr, &var_mgn_, 0);
-        box.printTo(std::cout);
-      }
-      std::cout << std::endl;
-      return;
-    }
-
-    size_t row = 0;  // row number
-    bool is_invalid = false;
-    while (!is_invalid) {
-      box = log.columns_[0]->Evaluate(nullptr, &var_mgn_, row);
-      if (box.getType() == TypeId::INVALID) { break; }
-      box.printTo(std::cout);
-      for (size_t i = 1; i < log.columns_.size(); ++i) {
-        std::cout << ',';
-        box = log.columns_[i]->Evaluate(nullptr, &var_mgn_, row);
-        box.printTo(std::cout);
-        if (!is_invalid) { is_invalid = box.getType() == TypeId::INVALID; }
-      }
-
-      ++row;
-      std::cout << std::endl;
-    }
-    return;
-  }
-  // throw std::domain_error("not implemented, please wait...");
-  // currently support select <exprs> from <table> where <predicate>.
-  AbstractExprRef predicate = static_cast<bool>(log.where_) ? log.where_ :
-                              std::make_shared<ConstExpr>(ConstExpr(TypeId::Bool, "True"));
-  // log.printTo(std::cout);
-  std::ofstream logout("cql.log", std::ios::app);
-  log.printTo(logout);
-  logout << std::endl;
-  logout.close();
-  // std::cout << std::endl;
-  if (table_mgn_.find(log.table_) == table_mgn_.end()) {
-    std::cout << "NOTE: maybe you've forgot to load the table " << log.table_ << '.' << std::endl;
-    throw std::domain_error("trying to select from a non-existing table?? Impossible!");
-  }
-  TableInfo &table_info = table_mgn_[log.table_];
-  std::vector<Tuple> tuples = table_info.table_ptr_->getTuples();
-  if (!log.order_by_.empty()) {
-    order_by_ = log.order_by_;
-    order_by_type_ = log.order_by_type_;
-    std::sort(tuples.begin(), tuples.end(), TupleHelper::compare);
-  }
-
-  if (log.columns_.empty()) {
-    throw std::domain_error("no item selected?? Impossible!");
-  }
-  size_t count = 0;
-  size_t max_count = log.limit_ == static_cast<size_t>(-1) ? log.limit_ : log.limit_ + log.offset_;
-  for (size_t row = 0; row < tuples.size() && count < max_count; ++row) {
-    // deal with tuples one by one.
-    if (tuples[row].isDeleted()) { continue; }
-    if (!predicate->Evaluate(&(tuples[row]), &var_mgn_, 0).getBoolValue()) { continue; }
-    if (count < log.offset_) { ++count; continue; }
-    DataBox box = log.columns_[0]->Evaluate(&(tuples[row]), &var_mgn_, 0); 
-    if (!log.destination_.empty() && log.destination_[0] != "@") {
-      var_mgn_.Append(log.destination_[0], box);
-    }
-    box.printTo(std::cout);
-    for (size_t col = 1; col < log.columns_.size(); ++col) {
-      // hopefully this won't mingle with variable table...
+  Planner planner(&table_mgn_, &var_mgn_);
+  AbstractExecutorRef exec = planner.GetExecutors(log);
+  if (!static_cast<bool>(exec)) { return; }
+  Tuple temp;
+  while (exec->Next(&temp)) {
+    size_t i = 0;
+    temp.getColumnData(i).printTo(std::cout);
+    for (i = 1; i < temp.getSize(); ++i) {
       std::cout << ',';
-      box = log.columns_[col]->Evaluate(&(tuples[row]), &var_mgn_, 0); 
-      box.printTo(std::cout);
-      // append it to a variable(if required)...
-      if (col < log.destination_.size() && log.destination_[col] != "@") {
-        var_mgn_.Append(log.destination_[col], box);
-      }
+      temp.getColumnData(i).printTo(std::cout);
     }
-    ++count;
-
     std::cout << std::endl;
   }
-
-  return;
 }
 
 }  // namespace cql
