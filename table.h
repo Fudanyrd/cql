@@ -63,4 +63,15 @@ class Table {
   }
 };
 
+/** Useful collection of a table information */
+struct TableInfo {
+  TableInfo() = default;
+  TableInfo(Table *ptr, bool dirty = false): table_ptr_(ptr), is_dirty_(dirty) {}
+  // if dirty, dump the table to where it should be(but not destroy the table explicitly).
+  ~TableInfo() = default;
+
+  Table *table_ptr_{nullptr};             // table pointer.
+  bool is_dirty_{false};                  // whether table is dirty.
+};
+
 }
