@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "expr_util.h"
+#include "Parser.h"
 #include "table.h"
 #include "tuple.h"
 #include "variable_manager.h"
@@ -220,8 +221,60 @@ class LimitExecutor: public AbstractExecutor {
   auto Next(Tuple *tuple) -> bool override;
 };
 
-///////////////////////////////////////////////////////////
-// TODO(Fudanyrd): add {limit, sort} executor(s).
-///////////////////////////////////////////////////////////
+struct TupleComparator {
+  const std::vector<AbstractExprRef> &order_by_;
+  const std::vector<OrderByType> &order_by_type_;
+
+  TupleComparator(const std::vector<AbstractExprRef> &order_by, const std::vector<OrderByType> &order_by_type):
+    order_by_(order_by), order_by_type_(order_by_type) {}
+  
+  /** Comparator for tuples */
+  auto compare(const Tuple &t1, const Tuple &t2) const -> bool;
+};
+
+struct SortHelper {
+  /** the tuple comparator to use */
+  TupleComparator *cmp_{nullptr};
+  /** the tuple it contains */
+  Tuple tuple_;
+
+  SortHelper(TupleComparator *cmp, const Tuple &tp): cmp_(cmp), tuple_(tp) {} 
+  SortHelper(const SortHelper &that) = default;
+
+  /** Comparator for SortHelper. */
+  static auto compare(const SortHelper &h1, const SortHelper &h2) -> bool {
+    cqlAssert(h1.cmp_ == h2.cmp_, "two sort helper hold different comparator");
+    return h1.cmp_->compare(h1.tuple_, h2.tuple_);
+  }
+};
+
+class SortExecutor: public AbstractExecutor {
+  // const std::vector<AbstractExprRef> &order_by_;
+  // const std::vector<OrderByType> &order_by_type_;
+ private:
+  TupleComparator comparator_;
+  /** store the tuples in order */
+  std::vector<SortHelper> helpers_;
+  /** number of tuples emitted */
+  size_t count_{0U};
+  /** Get tuples from its child */
+  AbstractExecutorRef child_{nullptr};
+
+ public:
+  SortExecutor(const std::vector<AbstractExprRef> &order_by, const std::vector<OrderByType> &order_by_type, 
+              AbstractExecutorRef child): comparator_(order_by, order_by_type), child_(child) {
+    cqlAssert(static_cast<bool>(child_), "child of sort executor is null");
+    exec_type_ = ExecutorType::Sort;
+  }
+
+  /** return the schema as-is */
+  auto GetOutputSchema() const -> const Schema * override { return child_->GetOutputSchema(); }
+
+  /** do the sorting and put the tuples in the vector */
+  void Init() override;
+
+  /** emit the tuple one by one */
+  auto Next(Tuple *tuple) -> bool override;
+};
 
 }  // namespace cql

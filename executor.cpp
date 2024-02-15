@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "executor.h"
 
 namespace cql {
@@ -126,5 +128,42 @@ auto LimitExecutor::Next(Tuple *tuple) -> bool {
   return true;
 }
 
+/************************************************
+ *               TupleComparator 
+ ************************************************/
+auto TupleComparator::compare(const Tuple &t1, const Tuple &t2) const -> bool {
+  cqlAssert(order_by_.size() == order_by_type_.size(), "size of order_by and order_by_type is incompatible");
+  for (size_t i = 0; i < order_by_.size(); ++i) {
+    DataBox val1 = order_by_[i]->Evaluate(&t1, nullptr, 0);
+    DataBox val2 = order_by_[i]->Evaluate(&t2, nullptr, 0);
+    DataBox equal = DataBox::EqualTo(val1, val2);
+    if (equal.getBoolValue()) { continue; }
+    DataBox less  = DataBox::LessThan(val1, val2);
+    return order_by_type_[i] == OrderByType::ASC ? less.getBoolValue() : (!less.getBoolValue());
+  }
+
+  return true;
+}
+
+/************************************************
+ *                SortExecutor 
+ ************************************************/
+void SortExecutor::Init() {
+  count_ = 0;
+  child_->Init();
+  SortHelper helper(&comparator_, Tuple());
+
+  while (child_->Next(&(helper.tuple_))) {
+    helpers_.push_back(helper);
+  }
+
+  std::sort(helpers_.begin(), helpers_.end(), SortHelper::compare);
+}
+
+auto SortExecutor::Next(Tuple *tuple) -> bool {
+  if (count_ >= helpers_.size()) { return false; }
+  *tuple = helpers_[count_++].tuple_;
+  return true;
+}
 
 }  // namespace cql

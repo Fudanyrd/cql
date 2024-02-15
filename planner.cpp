@@ -24,6 +24,11 @@ auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
     res = std::make_shared<FilterExecutor>(FilterExecutor(log.where_, res, var_mgn_));
   }
 
+  /** Sort executor */
+  if (!log.order_by_.empty()) {
+    res = std::make_shared<SortExecutor>(SortExecutor(log.order_by_, log.order_by_type_, res));
+  }
+
   /** Limit executor */
   if (log.limit_ != static_cast<size_t>(-1) || log.offset_ != 0) {
     res = std::make_shared<LimitExecutor>(LimitExecutor(log.limit_, log.offset_, res));

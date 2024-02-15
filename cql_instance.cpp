@@ -401,6 +401,7 @@ void cqlInstance::PerformSelect(const ParserLog &log) {
   Planner planner(&table_mgn_, &var_mgn_);
   AbstractExecutorRef exec = planner.GetExecutors(log);
   if (!static_cast<bool>(exec)) { return; }
+  exec->Init();
   Tuple temp;
   while (exec->Next(&temp)) {
     size_t i = 0;
