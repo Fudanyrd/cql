@@ -165,8 +165,63 @@ class DestExecutor: public AbstractExecutor {
   auto Next(Tuple *tuple) -> bool override;
 };
 
+class FilterExecutor: public AbstractExecutor {
+ private:
+  /** Predicate over tuples(may not be nullptr). */
+  AbstractExprRef predicate_;
+  /** Child executor where tuples are from. */
+  AbstractExecutorRef child_;
+  /** Sometimes involve variable manager? */
+  VariableManager *var_mgn_;
+ public:
+  FilterExecutor(AbstractExprRef predicate, AbstractExecutorRef child, VariableManager *var_mgn):
+    predicate_(predicate), child_(child), var_mgn_(var_mgn) {
+    this->exec_type_ = ExecutorType::Filter;
+    cqlAssert(static_cast<bool>(predicate_), "predicate of filter executor is null");
+    cqlAssert(static_cast<bool>(child_), "child of filter executor is null");
+  }
+
+  /** Filter executor has the same output schema as its child */
+  auto GetOutputSchema() const -> const Schema * override {
+    return child_->GetOutputSchema();
+  }
+
+  void Init() override { child_->Init(); }
+
+  auto Next(Tuple *tuple) -> bool override;
+};
+
+class LimitExecutor: public AbstractExecutor {
+ private:
+  /** Number of tuples emitted */
+  size_t count_{0U};
+  /** Limit value */
+  size_t limit_{static_cast<size_t>(-1)};
+  /** offset value */
+  size_t offset_{0U};
+  /** Child executor to yield tuples. */
+  AbstractExecutorRef child_;
+
+ public:
+  LimitExecutor(size_t limit, size_t offset, AbstractExecutorRef child):
+    limit_(limit), offset_(offset), child_(child) {
+    this->exec_type_ = ExecutorType::Limit;
+  } 
+
+  auto GetOutputSchema() const -> const Schema * override {
+    return child_->GetOutputSchema();
+  }
+
+  void Init() override {
+    count_ = 0;
+    child_->Init();
+  }
+
+  auto Next(Tuple *tuple) -> bool override;
+};
+
 ///////////////////////////////////////////////////////////
-// TODO(Fudanyrd): add {limit, sort, filter} executor(s).
+// TODO(Fudanyrd): add {limit, sort} executor(s).
 ///////////////////////////////////////////////////////////
 
 }  // namespace cql

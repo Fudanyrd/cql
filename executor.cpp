@@ -93,4 +93,38 @@ auto DestExecutor::Next(Tuple *tuple) -> bool {
   return true;
 }
 
+/************************************************
+ *               FilterExecutor 
+ ************************************************/
+auto FilterExecutor::Next(Tuple *tuple) -> bool {
+  Tuple tp;
+  while (child_->Next(&tp)) {
+    DataBox evaluation = predicate_->Evaluate(&tp, var_mgn_, 0);
+    if (evaluation.getBoolValue()) {
+      *tuple = tp;
+      return true;
+    }
+  }
+  return false;
+}
+
+/************************************************
+ *                LimitExecutor 
+ ************************************************/
+auto LimitExecutor::Next(Tuple *tuple) -> bool {
+  // Tuple tp;
+  for (; count_ < offset_; ++count_) {
+    if (!child_->Next(tuple)) { return false; }
+  }
+  size_t end = limit_ == static_cast<size_t>(-1) ? limit_ : (limit_ + offset_);
+  if (count_ >= end) { return false; }
+
+  if (!child_->Next(tuple)) {
+    return false;
+  }
+  ++count_;
+  return true;
+}
+
+
 }  // namespace cql

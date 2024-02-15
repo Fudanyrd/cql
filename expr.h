@@ -32,6 +32,7 @@ class AbstractExpr {
    * @return the data type of the expression.
    */
   virtual auto GetDataType() const -> TypeId { return data_type_; }
+  virtual ~AbstractExpr() = default;
   
   /**
    * @return the expression type of expression
@@ -126,12 +127,12 @@ enum BinaryExprType {
   And,     // x and y
   Or,      // x or y
   Xor,     // x xor y
-  LessThan,
-  LessThanOrEqual,
-  GreaterThan,
-  GreaterThanOrEqual,
-  EqualTo,
-  NotEqualTo,
+  LessThan,             // <
+  LessThanOrEqual,      // <=
+  GreaterThan,          // >
+  GreaterThanOrEqual,   // >=
+  EqualTo,              // =
+  NotEqualTo,           // !=
   unknown
 };
 
