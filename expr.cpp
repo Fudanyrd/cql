@@ -205,6 +205,9 @@ auto BinaryExpr::Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t i
     case BinaryExprType::sub:
       res = left_val - right_val;
       break;
+    case BinaryExprType::mod:  // little significant bits are discarded!
+      res = static_cast<double>(static_cast<long>(left_val) % static_cast<long>(right_val));
+      break;
     case BinaryExprType::mult:
       res = left_val * right_val;
       break;
@@ -236,6 +239,9 @@ auto BinaryExpr::toString() const -> std::string {
       break;
     case BinaryExprType::mult:
       res += ")*(";
+      break;
+    case BinaryExprType::mod:
+      res += ")%(";
       break;
     case BinaryExprType::div:
       res += ")/(";

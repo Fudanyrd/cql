@@ -19,6 +19,7 @@ const std::unordered_map<std::string, int> isp_table = {
   {"*", 11},
   {"^", 11},
   {"/", 11},
+  {"%", 11},
   // add, sub
   {"+", 9},
   {"-", 9},
@@ -59,6 +60,7 @@ const std::unordered_map<std::string, int> icp_table = {
   {"*", 10},
   {"^", 10},
   {"/", 10},
+  {"%", 10},
   // add, sub
   {"+", 8},
   {"-", 8},
@@ -161,6 +163,7 @@ auto getOperator(const std::string &word) -> AbstractExprRef {
       case '+': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::add, nullptr, nullptr));
       case '-': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::sub, nullptr, nullptr));
       case '*': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::mult, nullptr, nullptr));
+      case '%': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::mod, nullptr, nullptr));
       case '/': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::div, nullptr, nullptr));
       case '^': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::power, nullptr, nullptr));
     }

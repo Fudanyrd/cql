@@ -121,6 +121,7 @@ class UnaryExpr: public AbstractExpr {
 enum BinaryExprType {
   add,     // x + y
   sub,     // x - y
+  mod,     // (int)x % (int)y
   mult,    // x * y
   div,     // x / y
   power,   // x to y
