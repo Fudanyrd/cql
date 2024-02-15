@@ -95,6 +95,9 @@ enum UnaryExprType {
   Acos,                // arccos(x)
   Atan,                // arctan(x)
   Not,                 // logic not
+  ToStr,               // casting to string
+  ToFloat,             // casting to float
+  ToBool,              // casting to boolean
   invalid
 };
 // this generally is enough since:
@@ -117,6 +120,11 @@ class UnaryExpr: public AbstractExpr {
   auto toString() const -> std::string;
 };
 
+// important note on 'in' operator:
+// "not false in @var"
+//   is equivalent to:
+// "not (false in @var)"
+
 // type of binary expression(+ applies to string and float; others only apply to float)
 enum BinaryExprType {
   add,     // x + y
@@ -134,6 +142,7 @@ enum BinaryExprType {
   GreaterThanOrEqual,   // >=
   EqualTo,              // =
   NotEqualTo,           // !=
+  in,                   // a in @var
   unknown
 };
 

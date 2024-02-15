@@ -16,6 +16,19 @@ auto UnaryExpr::Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t id
   }
 
   DataBox child_val = child_->Evaluate(tuple, var_mgn, idx);
+  // deal with casting operation.
+  switch(optr_type_) {
+    case UnaryExprType::ToBool:
+      return DataBox::toBool(child_val);
+    case UnaryExprType::ToFloat:
+      return DataBox::toFloat(child_val);
+    case UnaryExprType::ToStr:
+      return DataBox::toStr(child_val);
+    default:
+      break;
+      // pass
+  }
+
   if (child_val.getType() == TypeId::INVALID) {
     // it means that one variable index is out of bounds...
     return DataBox(TypeId::INVALID, "");
@@ -126,6 +139,9 @@ auto UnaryExpr::toString() const -> std::string {
     case UnaryExprType::Not:
       res += "not(";
       break;
+    case UnaryExprType::ToStr:
+    case UnaryExprType::ToFloat:
+    case UnaryExprType::ToBool:
     default:
       throw std::domain_error("invalid unary operator type!");
   }
@@ -143,6 +159,23 @@ auto BinaryExpr::Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t i
 
   auto left_box = left_child_->Evaluate(tuple, var_mgn, idx);
   auto right_box = right_child_->Evaluate(tuple, var_mgn, idx);
+  if (optr_type_ == BinaryExprType::in) {
+    // in operator is really, really special...
+    // only output the result once?? no!
+    size_t i = 0;
+    right_box = right_child_->Evaluate(tuple, var_mgn, i);
+    while (right_box.getType() != TypeId::INVALID) {
+      if (right_box.getType() != left_box.getType()) {
+        right_box = right_child_->Evaluate(tuple, var_mgn, ++i);
+        continue;
+      }
+      if (DataBox::EqualTo(left_box, right_box).getBoolValue()) {
+        return DataBox(true);
+      }
+      right_box = right_child_->Evaluate(tuple, var_mgn, ++i);
+    }
+    return DataBox(false);
+  }
   if (left_box.getType() == TypeId::INVALID || right_box.getType() == TypeId::INVALID) {
     return DataBox(TypeId::INVALID, "");
   }
@@ -276,7 +309,9 @@ auto BinaryExpr::toString() const -> std::string {
     case BinaryExprType::NotEqualTo:
       res += ") != (";
       break;
-
+    case BinaryExprType::in:
+      res += ") in (";
+      break;
     default:
       // throw std::domain_error("unrecognizable binary operation on float");
       res += ")<unknown operator>(";

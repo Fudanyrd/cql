@@ -70,6 +70,13 @@ class DataBox {
   static auto EqualTo(const DataBox &b1, const DataBox &b2) -> DataBox;
   static auto NotEqualTo(const DataBox &b1, const DataBox &b2) -> DataBox;
 
+  ///////////////////////////
+  // Type Casting 
+  ///////////////////////////
+  static auto toStr(const DataBox &b) -> DataBox;
+  static auto toFloat(const DataBox &b) -> DataBox;
+  static auto toBool(const DataBox &b) -> DataBox;
+
   void printTo(std::ostream &os) const;
 };
 

@@ -14,7 +14,50 @@ namespace cql {
  * Defined BELOW
  ************************************************/
 const std::unordered_map<std::string, int> isp_table = {
-  {"(", 1},
+  {"(", 0},
+  // mult, div, power
+  {"*", 12},
+  {"^", 12},
+  {"/", 12},
+  {"%", 12},
+  // add, sub
+  {"+", 10},
+  {"-", 10},
+  // comparison
+  {"<", 8},
+  {">", 8},
+  {"<=", 8},
+  {">=", 8},
+  {"=", 8},
+  // in
+  {"in", 4},
+  // not
+  {"not", 3},
+  // and, or, xor
+  {"and", 2},
+  {"or", 2},
+  {"xor", 2},
+  // right parentese
+  {")", 15}
+};
+/**
+ * @return the in-stack priority of a operator.
+ */
+auto isp(const std::string &optr) -> int {
+  auto iter = isp_table.find(optr);
+  // if not match any, probably a unary operator like:
+  // sin, cos, tan, ...
+  return iter == isp_table.end() ? 14 : iter->second;
+}
+
+/************************************************
+ * Backgroud knowledge
+ * 
+ * (2) in-coming priority(icp) of operators:
+ * Defined BELOW
+ ************************************************/
+const std::unordered_map<std::string, int> icp_table = {
+  {"(", 15},
   // mult, div, power
   {"*", 11},
   {"^", 11},
@@ -30,54 +73,15 @@ const std::unordered_map<std::string, int> isp_table = {
   {">=", 7},
   {"=", 7},
   // not
-  {"not", 5},
+  {"not", 6},
+  // in
+  {"in", 5},
   // and, or, xor
-  {"and", 3},
-  {"or", 3},
-  {"xor", 3},
+  {"and", 1},
+  {"or",  1},
+  {"xor", 1},
   // right parentese
-  {")", 14}
-};
-/**
- * @return the in-stack priority of a operator.
- */
-auto isp(const std::string &optr) -> int {
-  auto iter = isp_table.find(optr);
-  // if not match any, probably a unary operator like:
-  // sin, cos, tan, ...
-  return iter == isp_table.end() ? 13 : iter->second;
-}
-
-/************************************************
- * Backgroud knowledge
- * 
- * (2) in-coming priority(icp) of operators:
- * Defined BELOW
- ************************************************/
-const std::unordered_map<std::string, int> icp_table = {
-  {"(", 14},
-  // mult, div, power
-  {"*", 10},
-  {"^", 10},
-  {"/", 10},
-  {"%", 10},
-  // add, sub
-  {"+", 8},
-  {"-", 8},
-  // comparison
-  {"<", 6},
-  {">", 6},
-  {"<=", 6},
-  {">=", 6},
-  {"=", 6},
-  // not
-  {"not", 4},
-  // and, or, xor
-  {"and", 2},
-  {"or", 2},
-  {"xor", 2},
-  // right parentese
-  {")", 1}
+  {")", 0}
 };
 /**
  * @return the in-coming priority of a operator.
@@ -86,7 +90,7 @@ auto icp(const std::string &optr) -> int {
   auto iter = icp_table.find(optr);
   // if not match any, probably a unary operator like:
   // sin, cos, tan, ...
-  return iter == isp_table.end() ? 12 : iter->second;
+  return iter == isp_table.end() ? 13 : iter->second;
 }
 
 /**
@@ -184,6 +188,18 @@ auto getOperator(const std::string &word) -> AbstractExprRef {
   }
   if (word == "xor") {
     return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::Xor, nullptr, nullptr));
+  }
+  if (word == "in") {
+    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::in, nullptr, nullptr));
+  }
+  if (word == "tobool") {
+    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToBool, nullptr));
+  }
+  if (word == "tofloat") {
+    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToFloat, nullptr));
+  }
+  if (word == "tostr") {
+    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToStr, nullptr));
   }
   if (word == "not") {
     return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Not, nullptr));
@@ -483,6 +499,10 @@ auto isConstExpr(const AbstractExprRef &root) -> bool {
       return isConstExpr(unary_ptr->child_);
     case ExprType::Binary:
       bin_ptr = dynamic_cast<const BinaryExpr *>(root.get());
+      if (bin_ptr->optr_type_ == BinaryExprType::in) {
+        // this should be seen as const expr.
+        return true;
+      }
       return isConstExpr(bin_ptr->left_child_) && 
              isConstExpr(bin_ptr->right_child_);
   }

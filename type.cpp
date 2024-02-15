@@ -1,3 +1,6 @@
+#include <cmath>
+#include <sstream>
+
 #include "type.h"
 
 namespace cql {
@@ -116,4 +119,42 @@ auto DataBox::NotEqualTo(const DataBox &b1, const DataBox &b2) -> DataBox {
   }
 }
 
+auto DataBox::toStr(const DataBox &b) -> DataBox {
+  std::ostringstream oss;  
+  oss << b.getFloatValue();
+  switch(b.getType()) {
+    case TypeId::Char:
+      return b;
+    case TypeId::Float:
+      return DataBox(TypeId::Char, oss.str());
+    case TypeId::Bool:
+      return DataBox(TypeId::Char, b.getBoolValue() ? "True" : "False");
+    case TypeId::INVALID:
+      return DataBox(TypeId::Char, "NULL");
+  }
+}
+auto DataBox::toFloat(const DataBox &b) -> DataBox {
+  switch(b.getType()) {
+    case TypeId::Char:
+      return DataBox(atof(b.getStrValue().c_str()));
+    case TypeId::Float:
+      return b;
+    case TypeId::Bool:
+      return DataBox(b.getBoolValue() ? 1.0 : 0.0);
+    case TypeId::INVALID:
+      return DataBox(sqrt(-1)); // not a number.
+  }
+}
+auto DataBox::toBool(const DataBox &b) -> DataBox {
+  switch(b.getType()) {
+    case TypeId::Char:
+      return DataBox(!b.getStrValue().empty());
+    case TypeId::Float:
+      return DataBox(b.getFloatValue() != 0.0);
+    case TypeId::Bool:
+      return b;
+    case TypeId::INVALID:
+      return DataBox(false); // not a number.
+  }
+}
 }  // namespace cql
