@@ -74,6 +74,7 @@ class DataBox {
   // Type Casting 
   ///////////////////////////
   static auto toStr(const DataBox &b) -> DataBox;
+  static auto toString(const DataBox &b) -> std::string;
   static auto toFloat(const DataBox &b) -> DataBox;
   static auto toBool(const DataBox &b) -> DataBox;
 

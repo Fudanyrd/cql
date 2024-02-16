@@ -14,6 +14,7 @@ namespace cql {
  * so as to simplify works done by compiler.
  */
 enum ExprType {
+  Aggregate,
   Column,    // column expression.
   Const,     // constant expression
   Unary,     // unary expression of float type
@@ -158,6 +159,33 @@ class BinaryExpr: public AbstractExpr {
     left_child_(left), right_child_(right), optr_type_(tp) { expr_type_ = ExprType::Binary; }
 
   auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox;
+  auto toString() const -> std::string;
+};
+
+// aggregation types
+enum AggregateType {
+  Agg,
+  Count,
+  Max,
+  Min,
+  Sum
+};
+
+// aggregation expression
+class AggregateExpr: public AbstractExpr {
+ public:
+  AggregateType agg_type_;
+  AbstractExprRef child_;
+  AggregateExpr(AggregateType agg_tp, AbstractExprRef child) {
+    this->expr_type_ = ExprType::Aggregate;
+    this->agg_type_ = agg_tp;
+    this->child_ = child;
+  }
+
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox {
+    return child_->Evaluate(tuple, var_mgn, idx);
+  }
+
   auto toString() const -> std::string;
 };
 

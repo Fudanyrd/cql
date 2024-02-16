@@ -398,6 +398,12 @@ auto cqlInstance::PerformUpdate(const ParserLog &log) -> size_t {
 }
 
 void cqlInstance::PerformSelect(const ParserLog &log) {
+  /** output to log file*/
+  std::ofstream fout("cql.log", std::ios::app);
+  log.printTo(fout);
+  fout << std::endl;
+  fout.close();
+
   Planner planner(&table_mgn_, &var_mgn_);
   AbstractExecutorRef exec = planner.GetExecutors(log);
   if (!static_cast<bool>(exec)) { return; }

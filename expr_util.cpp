@@ -240,6 +240,21 @@ auto getOperator(const std::string &word) -> AbstractExprRef {
   if (word == "sqr") {
     return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sqr));
   }
+  if (word == "agg") {
+    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Agg, nullptr));
+  }
+  if (word == "count") {
+    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Count, nullptr));
+  }
+  if (word == "max") {
+    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Max, nullptr));
+  }
+  if (word == "min") {
+    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Min, nullptr));
+  }
+  if (word == "sum") {
+    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Sum, nullptr));
+  }
 
   // matching failed.
   return nullptr;
@@ -422,6 +437,16 @@ auto toExprRef(const std::vector<std::string> &words) -> AbstractExprRef {
         operands.push(std::make_shared<UnaryExpr>(UnaryExpr(unary_ptr->optr_type_, unary_ptr->child_)));
         break;
       }
+      case ExprType::Aggregate: {
+        if (operands.empty()) {
+          throw std::domain_error("aggregate expr missing operand?? Impossible!");
+        }
+        auto unary_ptr = dynamic_cast<AggregateExpr *>(ref.get());
+        unary_ptr->child_ = operands.top();
+        operands.pop();
+        operands.push(std::make_shared<AggregateExpr>(AggregateExpr(unary_ptr->agg_type_, unary_ptr->child_)));
+        break;
+      }
 
       case ExprType::Binary: {
         if (operands.size() < 2) {
@@ -460,6 +485,16 @@ auto toExprRef(const std::vector<std::string> &words, size_t begin, size_t end) 
         operands.push(std::make_shared<UnaryExpr>(UnaryExpr(unary_ptr->optr_type_, unary_ptr->child_)));
         break;
       }
+      case ExprType::Aggregate: {
+        if (operands.empty()) {
+          throw std::domain_error("aggregate expr missing operand?? Impossible!");
+        }
+        auto unary_ptr = dynamic_cast<AggregateExpr *>(ref.get());
+        unary_ptr->child_ = operands.top();
+        operands.pop();
+        operands.push(std::make_shared<AggregateExpr>(AggregateExpr(unary_ptr->agg_type_, unary_ptr->child_)));
+        break;
+      }
 
       case ExprType::Binary: {
         if (operands.size() < 2) {
@@ -489,6 +524,7 @@ auto isConstExpr(const AbstractExprRef &root) -> bool {
   }
   const UnaryExpr *unary_ptr;
   const BinaryExpr *bin_ptr;
+  const AggregateExpr *agg_ptr;
   switch(root->GetExprType()) {
     case ExprType::Column: case ExprType::Variable:
       return false;
@@ -497,6 +533,9 @@ auto isConstExpr(const AbstractExprRef &root) -> bool {
     case ExprType::Unary:
       unary_ptr = dynamic_cast<const UnaryExpr *>(root.get());
       return isConstExpr(unary_ptr->child_);
+      case ExprType::Aggregate:
+        agg_ptr = dynamic_cast<const AggregateExpr *>(root.get());
+        return isConstExpr(agg_ptr->child_);
     case ExprType::Binary:
       bin_ptr = dynamic_cast<const BinaryExpr *>(root.get());
       if (bin_ptr->optr_type_ == BinaryExprType::in) {

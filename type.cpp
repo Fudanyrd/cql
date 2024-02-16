@@ -133,6 +133,20 @@ auto DataBox::toStr(const DataBox &b) -> DataBox {
       return DataBox(TypeId::Char, "NULL");
   }
 }
+auto toString(const DataBox &b) -> std::string {
+  std::ostringstream oss;  
+  oss << b.getFloatValue();
+  switch(b.getType()) {
+    case TypeId::Char:
+      return b.getStrValue();
+    case TypeId::Float:
+      return oss.str();
+    case TypeId::Bool:
+      return b.getBoolValue() ? "True" : "False";
+    case TypeId::INVALID:
+      return "NULL";
+  }
+}
 auto DataBox::toFloat(const DataBox &b) -> DataBox {
   switch(b.getType()) {
     case TypeId::Char:

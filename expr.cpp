@@ -150,6 +150,25 @@ auto UnaryExpr::toString() const -> std::string {
 }
 
 /**********************************************************
+ *                     UnaryExpr
+ **********************************************************/
+auto AggregateExpr::toString() const -> std::string {
+  std::string res;
+  switch(this->agg_type_) {
+    case AggregateType::Agg:
+      return child_->toString();
+    case AggregateType::Count:
+      res += "count(";
+    case AggregateType::Max:
+      res += "max(";
+    case AggregateType::Min:
+      res += "min(";
+    case AggregateType::Sum:
+      res += "sum(";
+  }
+}
+
+/**********************************************************
  *                     BinaryExpr
  **********************************************************/
 auto BinaryExpr::Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox {
