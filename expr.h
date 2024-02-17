@@ -68,16 +68,7 @@ class ConstExpr: public AbstractExpr {
   // in this operator tuple is unused.
   auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox { return data_; }
 
-  auto toString() const -> std::string {
-    switch(data_.getType()) {
-      case INVALID: return "NULL";
-      case Char: return data_.getStrValue();
-      case Float: return "<float const>";
-      case Bool: return "<bool const>";
-      default:
-        return "<unknown>";
-    }
-  }
+  auto toString() const -> std::string { return DataBox::toString(data_); }
 };
 
 // type of unary expression(Only apply to float!)

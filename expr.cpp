@@ -140,8 +140,14 @@ auto UnaryExpr::toString() const -> std::string {
       res += "not(";
       break;
     case UnaryExprType::ToStr:
+      res += "tostr(";
+      break;
     case UnaryExprType::ToFloat:
+      res += "tofloat(";
+      break;
     case UnaryExprType::ToBool:
+      res += "tobool(";
+      break;
     default:
       throw std::domain_error("invalid unary operator type!");
   }
@@ -150,7 +156,7 @@ auto UnaryExpr::toString() const -> std::string {
 }
 
 /**********************************************************
- *                     UnaryExpr
+ *                   AggregateExpr
  **********************************************************/
 auto AggregateExpr::toString() const -> std::string {
   std::string res;
@@ -159,13 +165,19 @@ auto AggregateExpr::toString() const -> std::string {
       return child_->toString();
     case AggregateType::Count:
       res += "count(";
+      break;
     case AggregateType::Max:
       res += "max(";
+      break;
     case AggregateType::Min:
       res += "min(";
+      break;
     case AggregateType::Sum:
       res += "sum(";
+      break;
   }
+  res += child_->toString();
+  return res + ")";
 }
 
 /**********************************************************

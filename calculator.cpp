@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 
 #include "expr_util.h"
@@ -6,6 +7,7 @@
 // a simple calculator class.
 // and a very interesting testing file.
 auto main(int argc, char **argv) -> int {
+  std::ofstream fout("calculator.log", std::ios::app);
   std::string line;
 
   while (getline(std::cin, line)) {
@@ -17,9 +19,11 @@ auto main(int argc, char **argv) -> int {
     cql::DataBox res; //  = root->Evaluate(nullptr);
     try {
       root = cql::toExprRef(cmd.words_);
+      fout << root->toString() << std::endl;
       res = root->Evaluate(nullptr, nullptr, 0);
     } catch (std::domain_error &e) {
       std::cout << e.what() << std::endl;
+      fout << e.what() << std::endl;
       continue;
     }
 
@@ -27,7 +31,9 @@ auto main(int argc, char **argv) -> int {
       std::cout << res.getStrValue() << std::endl;
     } else {
       res.printTo(std::cout);
+      res.printTo(fout);
       std::cout << std::endl;
+      fout << std::endl;
     }
 
   }

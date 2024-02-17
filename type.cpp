@@ -133,7 +133,7 @@ auto DataBox::toStr(const DataBox &b) -> DataBox {
       return DataBox(TypeId::Char, "NULL");
   }
 }
-auto toString(const DataBox &b) -> std::string {
+auto DataBox::toString(const DataBox &b) -> std::string {
   std::ostringstream oss;  
   oss << b.getFloatValue();
   switch(b.getType()) {
