@@ -39,6 +39,11 @@ class AbstractExpr {
    * @return the expression type of expression
    */
   virtual auto GetExprType() const -> ExprType { return expr_type_; }
+
+  /**
+   * @return the cloned node ref without cloning children.
+   */
+  virtual auto Clone() const -> std::shared_ptr<AbstractExpr> = 0;
   
   /**
    * @return the value of a tuple.
@@ -61,8 +66,16 @@ class ConstExpr: public AbstractExpr {
   DataBox data_;
 
   ConstExpr() { expr_type_ = ExprType::Const; }
+  ConstExpr(const DataBox &box) {
+    expr_type_ = ExprType::Const;
+    data_ = box;
+  }
   ConstExpr(TypeId tp, const std::string &dat): data_(tp, dat) {
     expr_type_ = ExprType::Const;
+  }
+
+  auto Clone() const -> AbstractExprRef override {
+    return std::make_shared<ConstExpr>(ConstExpr(data_));
   }
 
   // in this operator tuple is unused.
@@ -108,6 +121,10 @@ class UnaryExpr: public AbstractExpr {
     expr_type_ = ExprType::Unary;
   }
 
+  auto Clone() const -> AbstractExprRef override {
+    return std::make_shared<UnaryExpr>(UnaryExpr(optr_type_, nullptr));
+  }
+
   auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox;
   auto toString() const -> std::string;
 };
@@ -149,6 +166,10 @@ class BinaryExpr: public AbstractExpr {
   BinaryExpr(BinaryExprType tp, AbstractExprRef left, AbstractExprRef right):
     left_child_(left), right_child_(right), optr_type_(tp) { expr_type_ = ExprType::Binary; }
 
+  auto Clone() const -> AbstractExprRef override {
+    return std::make_shared<BinaryExpr>(BinaryExpr(optr_type_, nullptr, nullptr));
+  }
+
   auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox;
   auto toString() const -> std::string;
 };
@@ -173,7 +194,14 @@ class AggregateExpr: public AbstractExpr {
     this->child_ = child;
   }
 
+  auto Clone() const -> AbstractExprRef override {
+    return std::make_shared<AggregateExpr>(AggregateExpr(agg_type_, nullptr));
+  }
+
   auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox {
+    if (agg_type_ == AggregateType::Count) {
+      return DataBox(1.0);
+    }
     return child_->Evaluate(tuple, var_mgn, idx);
   }
 
@@ -192,6 +220,10 @@ class ColumnExpr: public AbstractExpr {
   ColumnExpr() { expr_type_ = ExprType::Column; } 
   ColumnExpr(size_t idx, const std::string &col_nm): column_idx_(idx), column_name_(col_nm) { 
     expr_type_ = ExprType::Column; 
+  }
+
+  auto Clone() const -> AbstractExprRef override {
+    return std::make_shared<ColumnExpr>(ColumnExpr(column_idx_, column_name_));
   }
 
   auto Evaluate(const Tuple *tuple, [[maybe_unused]] VariableManager *var_mgn, size_t idx) const -> DataBox { 
@@ -214,6 +246,10 @@ class VariableExpr: public AbstractExpr {
   VariableExpr() { expr_type_ = ExprType::Variable; }
   VariableExpr(const std::string &name): var_name_(name) {
     expr_type_ = ExprType::Variable;
+  }
+
+  auto Clone() const -> AbstractExprRef override {
+    return std::make_shared<VariableExpr>(VariableExpr(var_name_));
   }
 
   // currently not able to do this...

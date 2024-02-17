@@ -77,6 +77,18 @@ void ParserLog::printTo(std::ostream &os) const {
   }
   os << ']' << std::endl;
 
+  /** Group bys */
+  if (!group_by_.empty()) {
+    os << "  group_bys = [" << group_by_[0]->toString();
+    for (size_t i = 1; i < group_by_.size(); ++i) {
+      os << ',' << group_by_[i]->toString();
+    }
+    os << ']' << std::endl;
+  }
+  if (static_cast<bool>(having_)) {
+    os << "  having = " << having_->toString() << std::endl;
+  }
+
   /** Destination */
   if (!destination_.empty()) {
     os << "  destination = {" << destination_[0];
@@ -131,6 +143,30 @@ auto Parser::Parse(const Command &cmd) -> ParserLog {
       ++pos;
     }
     if (pos >= keyPos.size()) { return res; }
+
+    // TODO(Fudanyrd): deal with having clause.
+    pos = 2;
+    for (; pos < keyPos.size(); ++pos) {
+      if (cmd.words_[keyPos[pos]] == "having") { break; }
+    }
+    if (pos != keyPos.size()) {
+      res.having_ = (pos + 1 < keyPos.size()) ? toExprRef(cmd.words_, keyPos[pos] + 1, keyPos[pos + 1])
+                                              : toExprRef(cmd.words_, keyPos[pos] + 1, cmd.words_.size());
+    }
+
+    // TODO(Fudanyrd): deal with group by.
+    pos = 2;
+    for (; pos < keyPos.size(); ++pos) {
+      if (cmd.words_[keyPos[pos]] == "group by") { break; }
+    }
+    if (pos != keyPos.size()) {
+      size_t left = keyPos[pos] + 1;
+      size_t right = pos + 1 < keyPos.size() ? keyPos[pos + 1] : cmd.words_.size();
+      std::vector<std::pair<size_t, size_t>> pairs = splitBy(cmd.words_, ",", left, right);
+      for (const auto &pair : pairs) {
+        res.group_by_.push_back(toExprRef(cmd.words_, pair.first, pair.second));
+      }
+    }
 
     // TODO(Fudanyrd): deal with order by.
     pos = 2;

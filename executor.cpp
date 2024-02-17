@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <unordered_map>
 
 #include "executor.h"
 
@@ -164,6 +165,121 @@ auto SortExecutor::Next(Tuple *tuple) -> bool {
   if (count_ >= helpers_.size()) { return false; }
   *tuple = helpers_[count_++].tuple_;
   return true;
+}
+
+/************************************************
+ *                 AggExecutor 
+ ************************************************/
+AggExecutor::AggExecutor(const std::vector<AbstractExprRef> &columns, const std::vector<AbstractExprRef> &group_by, 
+                         const std::vector<AbstractExprRef> &order_by, AbstractExprRef having, VariableManager *var_mgn) 
+                         : columns_(columns), group_by_(group_by), having_(having), order_by_(order_by) {
+  exec_type_ = ExecutorType::AggExec;
+  var_mgn_ = var_mgn;
+
+  /** find aggregation expressions */
+  std::unordered_map<std::string, AbstractExprRef> agg_exprs; 
+  for (const auto &ref : columns_) {
+    findAggExprs(ref, agg_exprs);
+  }
+  for (const auto &ref : order_by_) {
+    findAggExprs(ref, agg_exprs);
+  }
+  findAggExprs(having_, agg_exprs);  // OK
+
+  /** create schema and then tables */
+  Schema table_schema;
+  std::vector<AbstractExprRef> agg_vals;  // used to yield data box from tuples.
+  agg_vals.reserve(agg_exprs.size());
+  // group_by_ : key
+  for (const auto &expr : group_by_) {
+    // how to set the type of columns??? a potential deficiency...
+    table_schema.AppendCol(TypeId::INVALID, expr->toString());
+  }
+  // agg_exprs: value
+  for (const auto &pair : agg_exprs) {
+    agg_vals.push_back(pair.second);
+    table_schema.AppendCol(TypeId::INVALID, pair.second->toString());
+  }
+  this->table_ = Table(table_schema); // OK
+
+  /** get tuples from child. */
+  std::unordered_map<std::string, std::vector<DataBox>> agg_table;  // table of aggregation values.
+  child_->Init();
+  Tuple tp;
+  while (child_->Next(&tp)) {
+    // evaluate the tuple and generate aggregation key.
+    std::vector<DataBox> boxes;
+    boxes.reserve(group_by_.size() + agg_vals.size());
+    std::string key;  // key used to get aggregate values.
+    for (const auto &ref : group_by_) {
+      DataBox box = ref->Evaluate(&tp, this->var_mgn_, 0);
+      key += DataBox::toString(box);
+      boxes.push_back(box);
+    }
+    for (const auto &ref : agg_vals) {
+      boxes.push_back(ref->Evaluate(&tp, this->var_mgn_, 0));
+    }
+
+    // update the value in aggregation table.
+    if (agg_table.find(key) == agg_table.end()) {
+      agg_table[key] = boxes;
+    } else {
+      // update by aggregation type.
+      std::vector<DataBox> &data = agg_table[key];
+      for (size_t i = group_by_.size(); i < boxes.size(); ++i) {
+        AbstractExprRef ref = agg_vals[i - group_by_.size()];
+        auto agg_ptr = dynamic_cast<const AggregateExpr *>(ref.get());
+        cqlAssert(static_cast<bool>(agg_ptr), "pointer to aggregation expr is null");
+
+        switch(agg_ptr->agg_type_) {
+          case AggregateType::Agg: {
+            data[i] = boxes[i];
+            break;
+          }
+          case AggregateType::Count: {
+            data[i] = DataBox(data[i].getFloatValue() + 1.0);
+            break;
+          }
+          case AggregateType::Max: {
+            if (DataBox::LessThan(data[i], boxes[i]).getBoolValue()) {
+              data[i] = boxes[i];
+            }
+            break;
+          }
+          case AggregateType::Min: {
+            if (DataBox::GreaterThan(data[i], boxes[i]).getBoolValue()) {
+              data[i] = boxes[i];
+            }
+            break;
+          }
+          case AggregateType::Sum: {
+            switch(data[i].getType()) {
+              case TypeId::Float:
+                data[i] = DataBox(data[i].getFloatValue() + DataBox::toFloat(boxes[i]).getFloatValue());
+                break;
+              case TypeId::Bool: {
+                // (bool) a + (bool) b = a | b.
+                bool res = data[i].getBoolValue() | DataBox::toBool(boxes[i]).getBoolValue();
+                data[i] = DataBox(res); 
+                break;
+              }
+              case TypeId::Char:
+                data[i] = DataBox(TypeId::Char, data[i].getStrValue() + DataBox::toString(boxes[i]));
+                break;
+              default:
+                break;
+            }
+            break;
+          }
+        }
+
+      }
+    }
+  }
+
+  for (const auto &pair : agg_table) {
+    table_.insertTuple(pair.second);
+  }
 }
 
 }  // namespace cql

@@ -547,4 +547,67 @@ auto isConstExpr(const AbstractExprRef &root) -> bool {
   }
 }
 
+auto isAggExpr(const AbstractExprRef &root) -> bool {
+  cqlAssert(static_cast<bool>(root), "trying to tell if a null expr tree is agg");
+  switch (root->GetExprType()) {
+    case ExprType::Column: case ExprType::Variable: case ExprType::Const:
+      return false;
+    case ExprType::Aggregate:
+      return true;
+    case ExprType::Unary: {
+      auto unary_ptr = dynamic_cast<const UnaryExpr *>(root.get());
+      return isAggExpr(unary_ptr->child_);
+    }
+    case ExprType::Binary: {
+      auto binary_ptr = dynamic_cast<const BinaryExpr *>(root.get());
+      return isAggExpr(binary_ptr->left_child_) || isAggExpr(binary_ptr->right_child_);
+    }
+  }
+}
+
+void findAggExprs(const AbstractExprRef &root, std::unordered_map<std::string, AbstractExprRef> &exprs) {
+  if (!static_cast<bool>(root)) {
+    throw std::domain_error("trying to find agg exprs in a null expr tree?? Impossible!");
+  }
+  switch (root->GetExprType()) {
+    case ExprType::Column: case ExprType::Variable: case ExprType::Const:
+      return;
+    case ExprType::Unary: {
+      const UnaryExpr *unary_ptr = dynamic_cast<const UnaryExpr *>(root.get());
+      findAggExprs(unary_ptr->child_, exprs);
+      return;
+    }
+    case ExprType::Binary: {
+      const BinaryExpr *binary_ptr = dynamic_cast<const BinaryExpr *>(root.get());
+      findAggExprs(binary_ptr->left_child_, exprs);
+      findAggExprs(binary_ptr->right_child_, exprs);
+      return;
+    }
+    case ExprType::Aggregate: {
+      exprs[root->toString()] = root;
+      return;
+    }
+  }
+}
+
+auto aggAsColumn(const AbstractExprRef &root) -> AbstractExprRef {
+  cqlAssert(static_cast<bool>(root), "argument to aggAsColumn is null");
+  switch (root->GetExprType()) {
+    case ExprType::Column: case ExprType::Variable: case ExprType::Const:
+      return root->Clone();
+    case ExprType::Unary: {
+      const UnaryExpr *unary_ptr = dynamic_cast<const UnaryExpr *>(root.get());
+      return std::make_shared<UnaryExpr>(UnaryExpr(unary_ptr->optr_type_, aggAsColumn(unary_ptr->child_)));
+    }
+    case ExprType::Binary: {
+      const BinaryExpr *binary_ptr = dynamic_cast<const BinaryExpr *>(root.get());
+      return std::make_shared<BinaryExpr>(BinaryExpr(binary_ptr->optr_type_, aggAsColumn(binary_ptr->left_child_), 
+                                          aggAsColumn(binary_ptr->right_child_)));
+    }
+    case ExprType::Aggregate: {
+      return std::make_shared<ColumnExpr>(ColumnExpr(0, root->toString()));
+    }
+  }
+}
+
 }  // namespace cql

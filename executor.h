@@ -36,6 +36,7 @@ enum ExecutorType {
   Projection,  // projection execution
   Seqscan,     // load a table.
   Sort,        // sort the tuples of a table.
+  AggExec,     // aggregate executor.
   Invalid_exec // a executor that does nothing(can be used as default value)
 };
 
@@ -275,6 +276,51 @@ class SortExecutor: public AbstractExecutor {
 
   /** emit the tuple one by one */
   auto Next(Tuple *tuple) -> bool override;
+};
+
+/**
+ * Aggregate executor should calculate the value of 
+ * all aggregation expressions, create table of tuples,
+ * and send up tables when required. 
+ * Then other work can be done by other executors.
+ *
+ * ie. aggregate executor is (almost certainly) 
+ * independent of other executors.
+ */
+class AggExecutor: public AbstractExecutor {
+ private:
+  /** find aggregate expr in columns. */
+  const std::vector<AbstractExprRef> &columns_;
+  /** group bys. */
+  const std::vector<AbstractExprRef> &group_by_;
+  /** having clause */
+  AbstractExprRef having_;
+  /** in case aggregate expr is in order by */
+  const std::vector<AbstractExprRef> &order_by_;
+  /* manually create table of the executor. */
+  Table table_;  // not initialized in Init method.
+  /** yield tuples from child executor(probably seqscan or filter)*/
+  AbstractExecutorRef child_;
+  /** Number of tuples emitted. */
+  size_t count_{0U};
+  /** variable manager?! */
+  VariableManager *var_mgn_;
+
+ public:
+  AggExecutor(const std::vector<AbstractExprRef> &columns, const std::vector<AbstractExprRef> &group_by, 
+              const std::vector<AbstractExprRef> &order_by, AbstractExprRef having, VariableManager *var_mgn);
+
+  auto GetOutputSchema() const -> const Schema * override { return table_.getSchema(); }
+
+  void Init() override { count_ = 0U; }
+
+  auto Next(Tuple *tuple) -> bool override {
+    if (count_ >= table_.getTuples().size()) {
+      return false;
+    }
+    *tuple = table_.getTuples()[count_++];
+    return true;
+  }
 };
 
 }  // namespace cql

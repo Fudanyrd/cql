@@ -28,6 +28,8 @@ const std::vector<std::string> keywords = {
   "order by",  // optional
   "limit",     // optional
   "offset",    // optional
+  "group by",  // optional
+  "having",    // optional
   "dest"       // optional
 };
 
@@ -49,6 +51,8 @@ struct ParserLog {
   size_t offset_{0};
   std::vector<AbstractExprRef> order_by_;
   std::vector<OrderByType> order_by_type_;
+  std::vector<AbstractExprRef> group_by_;
+  AbstractExprRef having_{nullptr};
   std::vector<std::string> destination_;               // load the query result to variable.
 };
 

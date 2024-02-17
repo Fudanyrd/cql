@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "expr.h"
@@ -45,5 +46,23 @@ auto toExprRef(const std::vector<std::string> &words, size_t begin, size_t end) 
  * @return true if the expression is const expr(ie. not include ColumnExpr and VariableExpr)
  */
 auto isConstExpr(const AbstractExprRef &root) -> bool;
+
+/**
+ * @return true if the expression contains aggregation expr.
+ */
+auto isAggExpr(const AbstractExprRef &root) -> bool;
+
+/**
+ * @brief find all aggregation expressions in an expression tree
+ * and register at a unordered_map.
+ * @param exprs: collection of aggregation expressions.
+ */
+void findAggExprs(const AbstractExprRef &root, std::unordered_map<std::string, AbstractExprRef> &exprs);
+
+/**
+ * @brief replace aggregation expression to column expression in a expression tree.
+ * @return the modified expression tree.
+ */
+auto aggAsColumn(const AbstractExprRef &root) -> AbstractExprRef;
 
 }  // namespace cql

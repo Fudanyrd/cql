@@ -130,7 +130,7 @@ auto DataBox::toStr(const DataBox &b) -> DataBox {
     case TypeId::Bool:
       return DataBox(TypeId::Char, b.getBoolValue() ? "True" : "False");
     case TypeId::INVALID:
-      return DataBox(TypeId::Char, "NULL");
+      return b;
   }
 }
 auto DataBox::toString(const DataBox &b) -> std::string {
@@ -156,7 +156,7 @@ auto DataBox::toFloat(const DataBox &b) -> DataBox {
     case TypeId::Bool:
       return DataBox(b.getBoolValue() ? 1.0 : 0.0);
     case TypeId::INVALID:
-      return DataBox(sqrt(-1)); // not a number.
+      return b;
   }
 }
 auto DataBox::toBool(const DataBox &b) -> DataBox {
@@ -168,7 +168,7 @@ auto DataBox::toBool(const DataBox &b) -> DataBox {
     case TypeId::Bool:
       return b;
     case TypeId::INVALID:
-      return DataBox(false); // not a number.
+      return b;
   }
 }
 }  // namespace cql
