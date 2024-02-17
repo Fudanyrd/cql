@@ -49,7 +49,7 @@ class Table {
   /**
    * @brief insert a tuple into the table.
    */
-  void insertTuple(const std::vector<DataBox> &data) { tuples_.push_back({&schema_, data}); }
+  void insertTuple(const std::vector<DataBox> &data) { tuples_.push_back(Tuple(&schema_, data)); }
 
   /**
    * @brief delete the tuple on index.

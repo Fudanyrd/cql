@@ -26,8 +26,13 @@ auto ProjectionExecutor::Next(Tuple *tuple) -> bool {
     // OK, getting values from tables.
     Tuple tp;
     if (child_->Next(&tp)) {
+      // std::cout << tp.getSchema() << std::endl;
+      // for (const auto &box : tp.getData()) {
+      //   box.printTo(std::cout); std::cout << ',';
+      // } std::cout << std::endl;
       std::vector<DataBox> data;
       for (const auto &expr : columns_) {
+        // std::cout << expr->toString() << std::endl;
         data.push_back(expr->Evaluate(&tp, var_mgn_, 0));
       }
       *tuple = Tuple(output_schema_, data);
@@ -204,7 +209,8 @@ AggExecutor::AggExecutor(const std::vector<AbstractExprRef> &columns, const std:
     agg_vals.push_back(pair.second);
     table_schema.AppendCol(TypeId::INVALID, pair.second->toString());
   }
-  this->table_ = Table(table_schema); // OK
+  this->schema_ = table_schema;
+  this->table_ = Table(this->schema_); // OK
 
   /** get tuples from child. */
   std::unordered_map<std::string, std::vector<DataBox>> agg_table;  // table of aggregation values.
@@ -221,7 +227,10 @@ AggExecutor::AggExecutor(const std::vector<AbstractExprRef> &columns, const std:
       boxes.push_back(box);
     }
     for (const auto &ref : agg_vals) {
-      boxes.push_back(ref->Evaluate(&tp, this->var_mgn_, 0));
+      auto agg_ptr = dynamic_cast<const AggregateExpr *>(ref.get());
+      boxes.push_back(static_cast<bool>(agg_ptr) 
+                      ? agg_ptr->child_->Evaluate(&tp, this->var_mgn_, 0)
+                      : ref->Evaluate(&tp, this->var_mgn_, 0));
     }
 
     // update the value in aggregation table.
@@ -284,6 +293,7 @@ AggExecutor::AggExecutor(const std::vector<AbstractExprRef> &columns, const std:
   for (const auto &pair : agg_table) {
     table_.insertTuple(pair.second);
   }
+  // table_.dump(std::cout);
 }
 
 }  // namespace cql

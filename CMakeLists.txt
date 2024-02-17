@@ -15,7 +15,7 @@ add_library(executor STATIC executor.cpp)
 add_library(parser STATIC Parser.cpp)
 target_link_libraries(parser expr)
 add_library(partitioner STATIC Partitioner.cpp)
-add_library(planner STATIC Planner.cpp)
+add_library(planner STATIC planner.cpp)
 target_link_libraries(planner executor)
 add_library(str_util STATIC string_util.cpp)
 add_library(table STATIC table.cpp tuple.cpp schema.cpp)  # tuple and schema can be seen as part of table

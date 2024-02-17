@@ -198,14 +198,19 @@ class AggregateExpr: public AbstractExpr {
     return std::make_shared<AggregateExpr>(AggregateExpr(agg_type_, nullptr));
   }
 
-  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox {
-    if (agg_type_ == AggregateType::Count) {
-      return DataBox(1.0);
+  auto Evaluate(const Tuple *tuple, VariableManager *var_mgn, size_t idx) const -> DataBox override {
+    auto schema_ptr = tuple->getSchema();
+    std::string column_name_ = this->toString();
+    for (size_t i = 0; i < schema_ptr->getNumCols(); ++i) {
+      // std::cout << schema_ptr->getNumCols();
+      if (column_name_ == schema_ptr->getColumn(i).second) {
+        return tuple->getColumnData(i); 
+      }
     }
-    return child_->Evaluate(tuple, var_mgn, idx);
+    throw std::domain_error(("unable to recognize column name " + column_name_ + "?? Impossible!").c_str());
   }
 
-  auto toString() const -> std::string;
+  auto toString() const -> std::string override;
 };
 
 // column expression(assosiated with a column with certain kind of tuple)

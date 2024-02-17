@@ -40,7 +40,7 @@ auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
     res = std::make_shared<AggExecutor>(AggExecutor(log.columns_, log.group_by_, 
                                                     log.order_by_, log.having_, var_mgn_, res));
     if (static_cast<bool>(log.having_)) {
-      res = std::make_shared<FilterExecutor>(FilterExecutor(aggAsColumn(log.having_), res, var_mgn_));
+      res = std::make_shared<FilterExecutor>(FilterExecutor(log.having_, res, var_mgn_));
     }
   }
 
@@ -57,8 +57,8 @@ auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
 
   /** Projection executor */
   if (!log.columns_.empty()) {
-    std::vector<AbstractExprRef> columns = is_agg ? aggsAsColumns(log.columns_) : log.columns_;
-    res = std::make_shared<ProjectionExecutor>(ProjectionExecutor(&projection_schema, var_mgn_, columns, res));
+    res = std::make_shared<ProjectionExecutor>(ProjectionExecutor(&projection_schema, var_mgn_, 
+                                                                  log.columns_, res));
   }
 
   /** Destination executor */

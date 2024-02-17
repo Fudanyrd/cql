@@ -21,6 +21,7 @@ class Schema {
 
  public:
   Schema() = default;
+  Schema(const Schema &that) { columns_ = that.columns_; }
   ~Schema() = default;
   
   /**

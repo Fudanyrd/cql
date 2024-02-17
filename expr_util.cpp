@@ -545,6 +545,7 @@ auto isConstExpr(const AbstractExprRef &root) -> bool {
       return isConstExpr(bin_ptr->left_child_) && 
              isConstExpr(bin_ptr->right_child_);
   }
+  throw std::domain_error("(in function isConstExpr)expr type didn't match any?? Impossible!");
 }
 
 auto isAggExpr(const AbstractExprRef &root) -> bool {
@@ -563,6 +564,7 @@ auto isAggExpr(const AbstractExprRef &root) -> bool {
       return isAggExpr(binary_ptr->left_child_) || isAggExpr(binary_ptr->right_child_);
     }
   }
+  throw std::domain_error("(in function isAggExpr)expr type didn't match any?? Impossible!");
 }
 
 void findAggExprs(const AbstractExprRef &root, std::unordered_map<std::string, AbstractExprRef> &exprs) {
@@ -608,6 +610,7 @@ auto aggAsColumn(const AbstractExprRef &root) -> AbstractExprRef {
       return std::make_shared<ColumnExpr>(ColumnExpr(0, root->toString()));
     }
   }
+  throw std::domain_error("(in function aggAsColumn)expr type didn't match any?? Impossible!");
 }
 
 }  // namespace cql

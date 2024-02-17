@@ -297,6 +297,8 @@ class AggExecutor: public AbstractExecutor {
   AbstractExprRef having_;
   /** in case aggregate expr is in order by */
   const std::vector<AbstractExprRef> &order_by_;
+  /** manually create schema of the executor. */
+  Schema schema_;
   /* manually create table of the executor. */
   Table table_;  // not initialized in Init method.
   /** yield tuples from child executor(probably seqscan or filter)*/
@@ -316,11 +318,12 @@ class AggExecutor: public AbstractExecutor {
   void Init() override { count_ = 0U; }
 
   auto Next(Tuple *tuple) -> bool override {
-    std::cout << count_ << std::endl;
     if (count_ >= table_.getNumRows()) {
       return false;
     }
-    *tuple = table_.getTuples()[count_++];
+    auto tuples = table_.getTuples();
+    *tuple = Tuple(&schema_, tuples[count_++].getData());
+    // *tuple = tuples[count_++];
     return true;
   }
 };
