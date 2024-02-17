@@ -308,14 +308,16 @@ class AggExecutor: public AbstractExecutor {
 
  public:
   AggExecutor(const std::vector<AbstractExprRef> &columns, const std::vector<AbstractExprRef> &group_by, 
-              const std::vector<AbstractExprRef> &order_by, AbstractExprRef having, VariableManager *var_mgn);
+              const std::vector<AbstractExprRef> &order_by, AbstractExprRef having, VariableManager *var_mgn,
+              AbstractExecutorRef child);
 
   auto GetOutputSchema() const -> const Schema * override { return table_.getSchema(); }
 
   void Init() override { count_ = 0U; }
 
   auto Next(Tuple *tuple) -> bool override {
-    if (count_ >= table_.getTuples().size()) {
+    std::cout << count_ << std::endl;
+    if (count_ >= table_.getNumRows()) {
       return false;
     }
     *tuple = table_.getTuples()[count_++];

@@ -3,6 +3,15 @@
 
 namespace cql {
 
+auto aggsAsColumns(const std::vector<AbstractExprRef> &refs) -> std::vector<AbstractExprRef> {
+  std::vector<AbstractExprRef> res;
+  res.reserve(refs.size());
+  for (const auto &ref : refs) {
+    res.push_back(aggAsColumn(ref));
+  }
+  return res;
+}
+
 auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
   /** Planner should manage a schema for projection executor. */
   static const std::string col_name = "<expr>";
@@ -24,9 +33,21 @@ auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
     res = std::make_shared<FilterExecutor>(FilterExecutor(log.where_, res, var_mgn_));
   }
 
+  /** Aggregate executor */
+  bool is_agg = false;
+  if (!log.group_by_.empty()) {
+    is_agg = true;
+    res = std::make_shared<AggExecutor>(AggExecutor(log.columns_, log.group_by_, 
+                                                    log.order_by_, log.having_, var_mgn_, res));
+    if (static_cast<bool>(log.having_)) {
+      res = std::make_shared<FilterExecutor>(FilterExecutor(aggAsColumn(log.having_), res, var_mgn_));
+    }
+  }
+
   /** Sort executor */
   if (!log.order_by_.empty()) {
-    res = std::make_shared<SortExecutor>(SortExecutor(log.order_by_, log.order_by_type_, res));
+    std::vector<AbstractExprRef> order_by = is_agg ? aggsAsColumns(log.order_by_) : log.order_by_;
+    res = std::make_shared<SortExecutor>(SortExecutor(order_by, log.order_by_type_, res));
   }
 
   /** Limit executor */
@@ -36,7 +57,8 @@ auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
 
   /** Projection executor */
   if (!log.columns_.empty()) {
-    res = std::make_shared<ProjectionExecutor>(ProjectionExecutor(&projection_schema, var_mgn_, log.columns_, res));
+    std::vector<AbstractExprRef> columns = is_agg ? aggsAsColumns(log.columns_) : log.columns_;
+    res = std::make_shared<ProjectionExecutor>(ProjectionExecutor(&projection_schema, var_mgn_, columns, res));
   }
 
   /** Destination executor */

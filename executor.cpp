@@ -171,10 +171,12 @@ auto SortExecutor::Next(Tuple *tuple) -> bool {
  *                 AggExecutor 
  ************************************************/
 AggExecutor::AggExecutor(const std::vector<AbstractExprRef> &columns, const std::vector<AbstractExprRef> &group_by, 
-                         const std::vector<AbstractExprRef> &order_by, AbstractExprRef having, VariableManager *var_mgn) 
+                         const std::vector<AbstractExprRef> &order_by, AbstractExprRef having, VariableManager *var_mgn, 
+                         AbstractExecutorRef child) 
                          : columns_(columns), group_by_(group_by), having_(having), order_by_(order_by) {
   exec_type_ = ExecutorType::AggExec;
   var_mgn_ = var_mgn;
+  this->child_ = child;
 
   /** find aggregation expressions */
   std::unordered_map<std::string, AbstractExprRef> agg_exprs; 
@@ -184,7 +186,9 @@ AggExecutor::AggExecutor(const std::vector<AbstractExprRef> &columns, const std:
   for (const auto &ref : order_by_) {
     findAggExprs(ref, agg_exprs);
   }
-  findAggExprs(having_, agg_exprs);  // OK
+  if (static_cast<bool>(having_)) {
+    findAggExprs(having_, agg_exprs);
+  }  // OK
 
   /** create schema and then tables */
   Schema table_schema;
@@ -259,7 +263,7 @@ AggExecutor::AggExecutor(const std::vector<AbstractExprRef> &columns, const std:
                 break;
               case TypeId::Bool: {
                 // (bool) a + (bool) b = a | b.
-                bool res = data[i].getBoolValue() | DataBox::toBool(boxes[i]).getBoolValue();
+                bool res = data[i].getBoolValue() || DataBox::toBool(boxes[i]).getBoolValue();
                 data[i] = DataBox(res); 
                 break;
               }
