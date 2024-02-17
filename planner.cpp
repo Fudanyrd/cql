@@ -34,9 +34,9 @@ auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
   }
 
   /** Aggregate executor */
-  bool is_agg = false;
+  // bool is_agg = false;
   if (!log.group_by_.empty()) {
-    is_agg = true;
+    // is_agg = true;
     res = std::make_shared<AggExecutor>(AggExecutor(log.columns_, log.group_by_, 
                                                     log.order_by_, log.having_, var_mgn_, res));
     if (static_cast<bool>(log.having_)) {
@@ -46,8 +46,8 @@ auto Planner::GetExecutors(const ParserLog &log) -> AbstractExecutorRef {
 
   /** Sort executor */
   if (!log.order_by_.empty()) {
-    std::vector<AbstractExprRef> order_by = is_agg ? aggsAsColumns(log.order_by_) : log.order_by_;
-    res = std::make_shared<SortExecutor>(SortExecutor(order_by, log.order_by_type_, res));
+    // std::vector<AbstractExprRef> order_by = is_agg ? aggsAsColumns(log.order_by_) : log.order_by_;
+    res = std::make_shared<SortExecutor>(SortExecutor(log.order_by_, log.order_by_type_, res));
   }
 
   /** Limit executor */
