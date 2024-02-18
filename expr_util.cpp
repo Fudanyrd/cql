@@ -148,6 +148,159 @@ auto getColumnExpr(const std::string &word) -> AbstractExprRef {
   return std::make_shared<ColumnExpr>(ColumnExpr(0U, actual));
 }
 
+auto MinusOperator() -> AbstractExprRef  {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Minus, nullptr));
+}
+auto EqualToOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::EqualTo, nullptr, nullptr));
+}
+auto LessThanOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::LessThan, nullptr, nullptr));
+}
+auto GreaterThanOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::GreaterThan, nullptr, nullptr));
+}
+auto AddOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::add, nullptr, nullptr));
+}
+auto SubOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::sub, nullptr, nullptr));
+}
+auto MultOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::mult, nullptr, nullptr));
+}
+auto ModOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::mod, nullptr, nullptr));
+}
+auto DivOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::div, nullptr, nullptr));
+}
+auto PowerOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::power, nullptr, nullptr));
+}
+auto LessThanOrEqualOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::LessThanOrEqual, nullptr, nullptr));
+}
+auto GreaterThanOrEqualOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::GreaterThanOrEqual, nullptr, nullptr));
+}
+auto AndOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::And, nullptr, nullptr));
+}
+auto OrOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::Or, nullptr, nullptr));
+}
+auto XorOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::Xor, nullptr, nullptr));
+}
+auto InOperator() -> AbstractExprRef {
+  return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::in, nullptr, nullptr));
+}
+auto ToBoolOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToBool, nullptr));
+}
+auto ToFloatOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToFloat, nullptr));
+}
+auto ToStrOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToStr, nullptr));
+}
+auto NotOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Not, nullptr));
+}
+auto ExpOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Exp));
+}
+auto LnOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Ln));
+}
+auto SinOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sin));
+}
+auto CosOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Cos));
+}
+auto TanOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Tan));
+}
+auto SgnOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sgn));
+}
+auto AbsOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Abs));
+}
+auto AsinOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Asin));
+}
+auto AcosOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Acos));
+}
+auto AtanOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Atan));
+}
+auto SqrtOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sqrt));
+}
+auto SqrOperator() -> AbstractExprRef {
+  return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sqr));
+}
+auto AggOperator() -> AbstractExprRef {
+  return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Agg, nullptr));
+}
+auto CountOperator() -> AbstractExprRef {
+  return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Count, nullptr));
+}
+auto MaxOperator() -> AbstractExprRef {
+  return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Max, nullptr));
+}
+auto MinOperator() -> AbstractExprRef {
+  return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Min, nullptr));
+}
+auto SumOperator() -> AbstractExprRef {
+  return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Sum, nullptr));
+}
+ 
+typedef AbstractExprRef (*ExprFunc)();  // expr functions
+std::unordered_map<std::string, ExprFunc> operator_factory = {
+  {"~", MinusOperator},
+  {"=", EqualToOperator},
+  {"<", LessThanOperator},
+  {">", GreaterThanOperator},
+  {"+", AddOperator},
+  {"-", SubOperator},
+  {"*", MultOperator},
+  {"%", ModOperator},
+  {"/", DivOperator},
+  {"^", PowerOperator},
+  {"<=", LessThanOrEqualOperator},
+  {">=", GreaterThanOrEqualOperator},
+  {"and", AndOperator},
+  {"or", OrOperator},
+  {"xor", XorOperator},
+  {"in", InOperator},
+  {"tobool", ToBoolOperator},
+  {"tofloat", ToFloatOperator},
+  {"tostr", ToStrOperator},
+  {"not", NotOperator},
+  {"exp", ExpOperator},
+  {"ln", LnOperator},
+  {"sin", SinOperator},
+  {"cos", CosOperator},
+  {"tan", TanOperator},
+  {"sgn", SgnOperator},
+  {"abs", AbsOperator},
+  {"asin", AsinOperator},
+  {"acos", AcosOperator},
+  {"atan", AtanOperator},
+  {"sqrt", SqrtOperator},
+  {"sqr", SqrOperator},
+  {"agg", AggOperator},
+  {"count", CountOperator},
+  {"max", MaxOperator},
+  {"min", MinOperator},
+  {"sum", SumOperator}
+};
+
 /**
  * @return the operator expression of a word.
  * nullptr if failed to match.
@@ -157,103 +310,10 @@ auto getOperator(const std::string &word) -> AbstractExprRef {
   // simplify the work...
   if (word[0] == '#') { return nullptr; }
 
-  if (word.size() == 1) {
-    // must be one of +-*/~^
-    switch (word[0]) {
-      case '~': return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Minus, nullptr));
-      case '=': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::EqualTo, nullptr, nullptr));
-      case '<': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::LessThan, nullptr, nullptr));
-      case '>': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::GreaterThan, nullptr, nullptr));
-      case '+': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::add, nullptr, nullptr));
-      case '-': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::sub, nullptr, nullptr));
-      case '*': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::mult, nullptr, nullptr));
-      case '%': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::mod, nullptr, nullptr));
-      case '/': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::div, nullptr, nullptr));
-      case '^': return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::power, nullptr, nullptr));
-    }
-    return nullptr;
-  }
-
-  if (word == "<=") {
-    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::LessThanOrEqual, nullptr, nullptr));
-  }
-  if (word == ">=") {
-    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::GreaterThanOrEqual, nullptr, nullptr));
-  }
-  if (word == "and") {
-    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::And, nullptr, nullptr));
-  }
-  if (word == "or") {
-    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::Or, nullptr, nullptr));
-  }
-  if (word == "xor") {
-    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::Xor, nullptr, nullptr));
-  }
-  if (word == "in") {
-    return std::make_shared<BinaryExpr>(BinaryExpr(BinaryExprType::in, nullptr, nullptr));
-  }
-  if (word == "tobool") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToBool, nullptr));
-  }
-  if (word == "tofloat") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToFloat, nullptr));
-  }
-  if (word == "tostr") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::ToStr, nullptr));
-  }
-  if (word == "not") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Not, nullptr));
-  }
-  if (word == "exp") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Exp));
-  }
-  if (word == "ln") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Ln));
-  }
-  if (word == "sin") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sin));
-  }
-  if (word == "cos") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Cos));
-  }
-  if (word == "tan") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Tan));
-  }
-  if (word == "sgn") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sgn));
-  }
-  if (word == "abs") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Abs));
-  }
-  if (word == "asin") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Asin));
-  }
-  if (word == "acos") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Acos));
-  }
-  if (word == "atan") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Atan));
-  }
-  if (word == "sqrt") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sqrt));
-  }
-  if (word == "sqr") {
-    return std::make_shared<UnaryExpr>(UnaryExpr(UnaryExprType::Sqr));
-  }
-  if (word == "agg") {
-    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Agg, nullptr));
-  }
-  if (word == "count") {
-    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Count, nullptr));
-  }
-  if (word == "max") {
-    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Max, nullptr));
-  }
-  if (word == "min") {
-    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Min, nullptr));
-  }
-  if (word == "sum") {
-    return std::make_shared<AggregateExpr>(AggregateExpr(AggregateType::Sum, nullptr));
+  auto iter = operator_factory.find(word);
+  if (iter != operator_factory.end()) {
+    ExprFunc func = iter->second;
+    return func();
   }
 
   // matching failed.
